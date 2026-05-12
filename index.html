@@ -230,12 +230,8 @@
 <header>
   <h1>Traffic Management Calculator</h1>
   <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
-  <div class="header-badges">
-    <span class="badge">AS1742.3</span>
-    <span class="badge">AGTTM03/04/05-21 (NSW)</span>
-    <span class="badge">TCAWS Issue 6.1 (NSW)</span>
-    <span class="badge">WA Code of Practice</span>
-    <span class="badge">QGTTM03/04/05 (QLD)</span>
+  <div class="header-badges" id="headerBadges">
+    <span class="badge">Select a state to begin</span>
   </div>
 </header>
 
@@ -249,39 +245,43 @@
 
   <div class="section-label">State or Territory</div>
   <div class="state-grid" id="stateGrid">
-    <button class="state-btn" onclick="sel(this,'VIC')">VIC<span class="state-reg">AS1742.3<br>Table 4.3</span></button>
-    <button class="state-btn" onclick="sel(this,'SA')">SA<span class="state-reg">AS1742.3<br>Table 4.3</span></button>
-    <button class="state-btn" onclick="sel(this,'TAS')">TAS<span class="state-reg">AS1742.3<br>Table 4.3</span></button>
-    <button class="state-btn" onclick="sel(this,'NT')">NT<span class="state-reg">AS1742.3<br>Table 4.3</span></button>
-    <button class="state-btn" onclick="sel(this,'WA')">WA<span class="state-reg">WA Code<br>of Practice</span></button>
-    <button class="state-btn" onclick="sel(this,'NSW')">NSW<span class="state-reg">AGTTM &amp;<br>TCAWS 6.1</span></button>
-    <button class="state-btn" onclick="sel(this,'QLD')">QLD<span class="state-reg">QGTTM03<br>04 &amp; 05</span></button>
+    <button class="state-btn" onclick="sel(this,'VIC')">VIC<span class="state-reg">Victoria</span></button>
+    <button class="state-btn" onclick="sel(this,'SA')">SA<span class="state-reg">South Australia</span></button>
+    <button class="state-btn" onclick="sel(this,'TAS')">TAS<span class="state-reg">Tasmania</span></button>
+    <button class="state-btn" onclick="sel(this,'NT')">NT<span class="state-reg">Northern Territory</span></button>
+    <button class="state-btn" onclick="sel(this,'WA')">WA<span class="state-reg">Western Australia</span></button>
+    <button class="state-btn" onclick="sel(this,'NSW')">NSW<span class="state-reg">New South Wales</span></button>
+    <button class="state-btn" onclick="sel(this,'QLD')">QLD<span class="state-reg">Queensland</span></button>
   </div>
 
-  <div class="section-label" style="margin-top:20px">Type of Works</div>
-  <div class="radio-group" id="worksTypeGroup">
-    <label class="radio-btn works-short active" id="wt-short" onclick="selWorks(this,'short')">
-      Short Duration<br><small style="font-weight:400">Same-day / &lt;1 shift</small>
-    </label>
-    <label class="radio-btn works-long" id="wt-long" onclick="selWorks(this,'long')">
-      Long Duration<br><small style="font-weight:400">Multi-shift / multi-day</small>
-    </label>
-    <label class="radio-btn works-mob" id="wt-mob" onclick="selWorks(this,'mobile')">
-      Mobile Works<br><small style="font-weight:400">Moving worksite</small>
-    </label>
-  </div>
+  <div class="hidden" id="postStateSetup">
+    <div class="box box-info mt12" id="stateBanner" style="margin-top:18px"></div>
 
-  <div class="section-label" style="margin-top:20px">Road Category</div>
-  <div class="radio-group" id="roadCatGroup">
-    <label class="radio-btn active" id="rc-1" onclick="selCat(this,1)">
-      Cat 1 — Local / Council<br><small style="font-weight:400">Local roads, minor streets</small>
-    </label>
-    <label class="radio-btn" id="rc-2" onclick="selCat(this,2)">
-      Cat 2 — Arterial / State Road<br><small style="font-weight:400">Highways, state roads</small>
-    </label>
-    <label class="radio-btn" id="rc-3" onclick="selCat(this,3)">
-      Cat 3 — Freeway / Motorway<br><small style="font-weight:400">Controlled access, no signals</small>
-    </label>
+    <div class="section-label" style="margin-top:18px">Type of Works</div>
+    <div class="radio-group" id="worksTypeGroup">
+      <label class="radio-btn works-short active" id="wt-short" onclick="selWorks(this,'short')">
+        Short Term Works<br><small style="font-weight:400">Same-day / &lt;1 shift</small>
+      </label>
+      <label class="radio-btn works-long" id="wt-long" onclick="selWorks(this,'long')">
+        Long Term Works<br><small style="font-weight:400">Multi-shift / multi-day</small>
+      </label>
+      <label class="radio-btn works-mob" id="wt-mob" onclick="selWorks(this,'mobile')">
+        Mobile Works<br><small style="font-weight:400">Moving worksite</small>
+      </label>
+    </div>
+
+    <div class="section-label" style="margin-top:20px">Road Category</div>
+    <div class="radio-group" id="roadCatGroup">
+      <label class="radio-btn active" id="rc-1" onclick="selCat(this,1)">
+        Cat 1 — Local / Council<br><small style="font-weight:400">Local roads, minor streets</small>
+      </label>
+      <label class="radio-btn" id="rc-2" onclick="selCat(this,2)">
+        Cat 2 — Arterial / State Road<br><small style="font-weight:400">Highways, state roads</small>
+      </label>
+      <label class="radio-btn" id="rc-3" onclick="selCat(this,3)">
+        Cat 3 — Freeway / Motorway<br><small style="font-weight:400">Controlled access, no signals</small>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -608,11 +608,9 @@
 
 <footer>
   <strong>Traffic Management Calculator</strong><br>
-  References: AS1742.3-2019 &bull; AGTTM03-21 / AGTTM04-21 / AGTTM05-21 (NSW) &bull; TCAWS Issue 6.1 (NSW) &bull;
-  WA Code of Practice for Traffic Management for Works on Roads &bull;
-  QGTTM03 / QGTTM04 / QGTTM05 (QLD, Nov 2025) &bull; Austroads Guide to Road Design Part 3<br>
-  <strong>Disclaimer:</strong> This tool is a guide only. All outputs must be verified against current state regulations
-  and by a competent person. Site-specific conditions may require different values.
+  <strong>Disclaimer:</strong> This tool is a guide only. All outputs must be verified against the current
+  edition of the applicable state regulations and by a competent person. Site-specific conditions
+  (alignment, sight restrictions, road surface, gradient, etc.) may require different values.
 </footer>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -702,17 +700,71 @@ let qldMode = 'count';
 
 // ═══════════════ UI HELPERS ════════════════════════════════════════════════════
 
+// State-specific reference info shown in banner + header badges
+const STATE_INFO = {
+  VIC: {
+    name: 'Victoria',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard for traffic control devices at works on roads. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  SA:  {
+    name: 'South Australia',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  TAS: {
+    name: 'Tasmania',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  NT:  {
+    name: 'Northern Territory',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  WA:  {
+    name: 'Western Australia',
+    badges: ['WA Code of Practice', 'AS1742.3'],
+    refs:  'WA Code of Practice for Traffic Management for Works on Roads &mdash; Main Roads WA method using hourly volume &times; stop time &times; vehicle length.',
+  },
+  NSW: {
+    name: 'New South Wales',
+    badges: ['AGTTM03-21', 'AGTTM04-21', 'AGTTM05-21', 'TCAWS 6.1'],
+    refs:  'AGTTM03-21, AGTTM04-21 &amp; AGTTM05-21 (Austroads Guide to Temporary Traffic Management) and TCAWS Issue 6.1 (Transport for NSW) &mdash; volume-based queue method with 2D / 1.5D sight distance rule.',
+  },
+  QLD: {
+    name: 'Queensland',
+    badges: ['QGTTM03', 'QGTTM04', 'QGTTM05', 'Table 4.3'],
+    refs:  'QGTTM03, QGTTM04 &amp; QGTTM05 (Queensland Guide to Temporary Traffic Management, TMR Nov 2025) &mdash; Table 4.3 multiplier method with optional AADT fallback.',
+  },
+};
+
 function sel(btn, s) {
   state = s;
   document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('trafficDataState').textContent = '— ' + s;
-  // Show/hide state-specific traffic forms
+
+  // Update header badges to show only the selected state's references
+  const info = STATE_INFO[s];
+  document.getElementById('headerBadges').innerHTML =
+    `<span class="badge"><strong>${info.name}</strong></span>` +
+    info.badges.map(b => `<span class="badge">${b}</span>`).join('');
+
+  // Show state-specific banner under state selection
+  document.getElementById('stateBanner').innerHTML =
+    `<strong>${info.name}:</strong> ${info.refs}`;
+  show('postStateSetup');
+
+  // Update traffic-data card heading
+  document.getElementById('trafficDataState').textContent = '— ' + info.name;
+
+  // Show only the relevant traffic-data form
   ['vic','wa','nsw','qld'].forEach(id => hide('form-' + id));
   if (['VIC','SA','TAS','NT'].includes(s)) show('form-vic');
   else if (s === 'WA')  show('form-wa');
   else if (s === 'NSW') show('form-nsw');
   else if (s === 'QLD') show('form-qld');
+
   show('card2'); show('card3'); show('calcCard');
   hide('resultsArea');
 }
