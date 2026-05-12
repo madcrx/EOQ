@@ -37,10 +37,10 @@
     /* ── Cards ── */
     .card { background:#fff; border-radius:var(--radius); padding:26px 30px; box-shadow:0 3px 16px rgba(0,0,0,.07); margin-bottom:22px; }
     .card-title {
-      font-size:1rem; font-weight:800; color:var(--blue-dark);
-      margin-bottom:18px; padding-bottom:10px;
+      font-size:1.05rem; font-weight:800; color:var(--blue-dark);
+      margin-bottom:20px; padding-bottom:12px;
       border-bottom:2px solid var(--gray-2);
-      display:flex; align-items:center; gap:8px;
+      display:flex; align-items:center; gap:10px;
     }
     .step-num {
       background:var(--blue); color:#fff; border-radius:50%;
@@ -48,16 +48,6 @@
       justify-content:center; font-size:.78rem; font-weight:800; flex-shrink:0;
     }
 
-    /* ── State buttons ── */
-    .state-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:10px; }
-    .state-btn {
-      padding:13px 6px; border:2px solid var(--gray-2); border-radius:8px;
-      cursor:pointer; text-align:center; font-size:.95rem; font-weight:800;
-      background:#fff; color:#4a5568; transition:all .15s;
-    }
-    .state-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
-    .state-btn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
-    .state-reg { font-size:.65rem; font-weight:400; display:block; margin-top:3px; opacity:.8; }
 
     /* ── Radio groups ── */
     .radio-group { display:flex; gap:10px; flex-wrap:wrap; }
@@ -84,12 +74,22 @@
     .hint { font-size:.75rem; color:var(--gray-3); margin-top:4px; }
     .example { font-size:.74rem; color:var(--blue); margin-top:2px; }
 
-    input[type="number"], select {
+    input[type="number"] {
       width:100%; padding:9px 12px; border:2px solid var(--gray-2); border-radius:8px;
       font-size:.92rem; background:#fff; color:var(--text); transition:border-color .15s;
     }
-    input[type="number"]:focus, select:focus { outline:none; border-color:var(--blue); }
+    input[type="number"]:focus { outline:none; border-color:var(--blue); }
     input[type="number"]::placeholder { color:#a0aec0; }
+
+    select {
+      width:100%; padding:10px 12px; border:2px solid var(--gray-2); border-radius:8px;
+      font-size:.92rem; background:#fff; color:var(--text); transition:border-color .15s;
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center;
+      padding-right:36px;
+    }
+    select:focus { outline:none; border-color:var(--blue); }
 
     .section-label {
       font-size:.73rem; font-weight:800; text-transform:uppercase;
@@ -232,11 +232,47 @@
       border-radius:4px; padding:2px 7px; font-size:.72rem; font-weight:700; margin:2px;
     }
 
+    /* Mobile touch improvements */
+    @media (max-width: 768px) {
+      .container { padding: 0 12px; }
+      header { padding: 16px 20px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 18px 16px; margin-bottom: 16px; }
+      .card-title { font-size: .95rem; }
+      select, input[type="number"] { padding: 12px 14px; font-size: 1rem; min-height: 48px; }
+      .calc-btn { padding: 18px; font-size: 1rem; min-height: 54px; position: sticky; bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+      .radio-btn { padding: 12px 14px; font-size: .88rem; min-height: 48px; }
+      .result-section-header { padding: 16px 16px; font-size: .9rem; min-height: 52px; }
+      .diagram-scroll { padding: 8px 2px; }
+      .pdf-btn { padding: 16px 24px; font-size: 1rem; min-height: 52px; width: 100%; }
+    }
+
+    /* Sticky calculate on mobile */
+    @media (max-width: 600px) {
+      #calcCard { position: sticky; bottom: 0; z-index: 10; padding: 12px; background: #f0f4f8; }
+    }
+
+    .pdf-btn {
+      padding:13px 28px; background:linear-gradient(135deg,#1a365d,#2b6cb0);
+      color:#fff; border:none; border-radius:8px; font-size:.95rem; font-weight:700;
+      cursor:pointer; transition:opacity .15s; letter-spacing:.01em;
+    }
+    .pdf-btn:hover { opacity:.9; }
+    .pdf-btn.share-btn { background:linear-gradient(135deg,#276749,#38a169); }
+
     @media print {
-      .calc-btn, .state-btn, .tab, .radio-btn { display:none; }
-      .result-section-body { display:block !important; }
-      .card { box-shadow:none; border:1px solid #ccc; }
-      .diagram-scroll { overflow:visible; }
+      body { background: white; font-size: 11pt; }
+      header { background: #1a365d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px 20px; }
+      .container { max-width: 100%; padding: 0 10px; }
+      .card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 12px; padding: 14px; }
+      #card2, #card3, #calcCard, #stateSelect, .radio-group, #pdfBar { display: none !important; }
+      .result-section-body { display: block !important; }
+      .result-section-header .chevron { display: none; }
+      .result-section-header { cursor: default; pointer-events: none; }
+      .diagram-scroll { overflow: visible; }
+      .diagram-scroll svg { width: 100% !important; }
+      .calc-btn { display: none; }
+      footer { page-break-before: always; }
     }
   </style>
 </head>
@@ -258,15 +294,19 @@
 <div class="card">
   <div class="card-title"><span class="step-num">1</span>State / Territory &amp; Job Setup</div>
 
-  <div class="section-label">State or Territory</div>
-  <div class="state-grid" id="stateGrid">
-    <button class="state-btn" onclick="sel(this,'VIC')">VIC<span class="state-reg">Victoria</span></button>
-    <button class="state-btn" onclick="sel(this,'SA')">SA<span class="state-reg">South Australia</span></button>
-    <button class="state-btn" onclick="sel(this,'TAS')">TAS<span class="state-reg">Tasmania</span></button>
-    <button class="state-btn" onclick="sel(this,'NT')">NT<span class="state-reg">Northern Territory</span></button>
-    <button class="state-btn" onclick="sel(this,'WA')">WA<span class="state-reg">Western Australia</span></button>
-    <button class="state-btn" onclick="sel(this,'NSW')">NSW<span class="state-reg">New South Wales</span></button>
-    <button class="state-btn" onclick="sel(this,'QLD')">QLD<span class="state-reg">Queensland</span></button>
+  <div class="form-group">
+    <label for="stateSelect">State or Territory</label>
+    <select id="stateSelect" onchange="selState(this.value)">
+      <option value="">-- Select State or Territory --</option>
+      <option value="VIC">VIC — Victoria</option>
+      <option value="SA">SA — South Australia</option>
+      <option value="TAS">TAS — Tasmania</option>
+      <option value="NT">NT — Northern Territory</option>
+      <option value="ACT">ACT — Australian Capital Territory</option>
+      <option value="WA">WA — Western Australia</option>
+      <option value="NSW">NSW — New South Wales</option>
+      <option value="QLD">QLD — Queensland</option>
+    </select>
   </div>
 
   <div class="hidden" id="postStateSetup">
@@ -303,19 +343,44 @@
 <!-- ═══════════════════════════════════════════════════════
      STEP 2 — ROAD & SPEED DETAILS
 ════════════════════════════════════════════════════════ -->
-<div class="card hidden" id="card2">
+<div class="card" id="card2">
   <div class="card-title"><span class="step-num">2</span>Road &amp; Speed Details</div>
 
   <div class="form-row">
     <div class="form-group">
       <label>Posted Speed Limit <span class="unit-hint">(km/h)</span></label>
-      <input type="number" id="postedSpeed" min="10" max="130" step="5" placeholder="e.g. 100">
-      <div class="hint">The permanent signed speed limit before any work-zone reduction</div>
+      <select id="postedSpeed">
+        <option value="20">20 km/h</option>
+        <option value="25">25 km/h</option>
+        <option value="30">30 km/h</option>
+        <option value="40">40 km/h</option>
+        <option value="50">50 km/h</option>
+        <option value="60" selected>60 km/h (default)</option>
+        <option value="70">70 km/h</option>
+        <option value="80">80 km/h</option>
+        <option value="90">90 km/h</option>
+        <option value="100">100 km/h</option>
+        <option value="110">110 km/h</option>
+        <option value="120">120 km/h</option>
+        <option value="130">130 km/h</option>
+      </select>
+      <div class="hint">Permanent signed speed limit before any work-zone reduction</div>
     </div>
     <div class="form-group">
       <label>Work Zone / Reduced Speed <span class="unit-hint">(km/h)</span></label>
-      <input type="number" id="workSpeed" min="10" max="130" step="5" placeholder="e.g. 40 &mdash; leave blank if unchanged">
-      <div class="hint">Leave blank if no speed reduction applies at this site</div>
+      <select id="workSpeed">
+        <option value="">No speed reduction</option>
+        <option value="25">25 km/h</option>
+        <option value="30">30 km/h</option>
+        <option value="40" selected>40 km/h (typical work zone)</option>
+        <option value="50">50 km/h</option>
+        <option value="60">60 km/h</option>
+        <option value="70">70 km/h</option>
+        <option value="80">80 km/h</option>
+        <option value="90">90 km/h</option>
+        <option value="100">100 km/h</option>
+      </select>
+      <div class="hint">Leave as "No speed reduction" if no work zone speed applies</div>
     </div>
   </div>
 
@@ -323,21 +388,21 @@
     <div class="form-group">
       <label>Number of Lanes <span class="unit-hint">(each direction)</span></label>
       <select id="numLanes">
-        <option value="1">1 lane</option>
-        <option value="2" selected>2 lanes</option>
+        <option value="1" selected>1 lane</option>
+        <option value="2">2 lanes</option>
         <option value="3">3 lanes</option>
         <option value="4">4+ lanes</option>
       </select>
     </div>
     <div class="form-group">
       <label>Lane Width <span class="unit-hint">(m)</span></label>
-      <input type="number" id="laneWidth" min="2.5" max="5" step="0.1" placeholder="e.g. 3.5">
+      <input type="number" id="laneWidth" min="2.5" max="5" step="0.1" placeholder="e.g. 3.5" value="3.5">
       <div class="hint">Standard: 3.5 m (arterial), 3.0–3.5 m (local)</div>
       <div class="example">Example: 3.5</div>
     </div>
     <div class="form-group">
       <label>Lateral Offset / Shift <span class="unit-hint">(m)</span></label>
-      <input type="number" id="lateralShift" min="0" max="20" step="0.1" placeholder="e.g. 3.5">
+      <input type="number" id="lateralShift" min="0" max="20" step="0.1" placeholder="e.g. 3.5" value="3.5">
       <div class="hint">Width traffic is shifted sideways. Usually = 1 lane width for a lane closure</div>
       <div class="example">Example: 3.5 (single lane closure)</div>
     </div>
@@ -347,17 +412,17 @@
     <div class="form-group">
       <label>Type of Closure</label>
       <select id="closureType">
+        <option value="shoulder" selected>Shoulder / Parking Lane Only</option>
         <option value="lane">Lane Closure — merge to adjacent lane</option>
         <option value="road">Road Closure — one lane two way</option>
-        <option value="shoulder">Shoulder / Parking Lane Only</option>
         <option value="mobile">Mobile — no fixed closure</option>
       </select>
     </div>
     <div class="form-group">
       <label>Road Environment</label>
       <select id="roadEnv">
+        <option value="builtup" selected>Built-up Area (urban)</option>
         <option value="open">Open Road (rural / highway)</option>
-        <option value="builtup">Built-up Area (urban)</option>
       </select>
     </div>
   </div>
@@ -366,11 +431,11 @@
   <div class="form-group">
     <label>Type of Traffic Management <span class="unit-hint">(TM arrangement to be implemented)</span></label>
     <select id="tmpType">
+      <option value="shoulder" selected>Works in Shoulder</option>
       <option value="lane-closure">Lane Closure</option>
       <option value="lane-narrow">Lane Narrowing</option>
       <option value="shuttleflow">Shuttleflow — One Lane Two-Way</option>
       <option value="contraflow">Contraflow</option>
-      <option value="shoulder">Works in Shoulder</option>
       <option value="median">Works on Median</option>
       <option value="footpath">Works on Footpath</option>
       <option value="carpark">Car Park Occupation</option>
@@ -379,7 +444,7 @@
   </div>
   <div class="form-group">
     <label>Work Area Length <span class="unit-hint">(m) — approximate length of the active works zone</span></label>
-    <input type="number" id="workAreaLen" min="10" max="5000" step="10" placeholder="e.g. 100">
+    <input type="number" id="workAreaLen" min="10" max="5000" step="10" placeholder="e.g. 100" value="50">
     <div class="hint">Distance from first worker/plant to last; leave blank to use estimated queue length</div>
     <div class="example">Example: 100 (short works), 500 (long resurfacing), 50 (bridge repair)</div>
   </div>
@@ -388,7 +453,7 @@
 <!-- ═══════════════════════════════════════════════════════
      STEP 3 — TRAFFIC DATA (for EoQ, state-specific)
 ════════════════════════════════════════════════════════ -->
-<div class="card hidden" id="card3">
+<div class="card" id="card3">
   <div class="card-title"><span class="step-num">3</span>Traffic Data <span id="trafficDataState" style="font-weight:400; color:var(--gray-3); margin-left:6px;"></span></div>
 
   <!-- VIC / SA / TAS / NT -->
@@ -584,7 +649,7 @@
 </div>
 
 <!-- Calculate -->
-<div class="card hidden" id="calcCard">
+<div class="card" id="calcCard">
   <button class="calc-btn" onclick="calculate()">&#9654;&nbsp; Calculate All Outputs</button>
 </div>
 
@@ -597,6 +662,7 @@
     <div style="background:var(--blue-dark);color:#fff;padding:16px 24px;font-weight:800;font-size:1rem;display:flex;align-items:center;gap:8px;">
       <span>&#9660;</span> Calculation Results
     </div>
+    <div id="calcSummaryBar" style="background:#ebf8ff;color:#2c5282;padding:10px 20px;font-size:.83rem;border-bottom:1px solid #bee3f8;display:none;"></div>
 
     <!-- EoQ -->
     <div class="result-section" id="sec-eoq">
@@ -650,6 +716,13 @@
 </div>
 
 </div><!-- /container -->
+
+<div class="container" id="pdfBar" style="display:none; margin-bottom:16px;">
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+    <button class="pdf-btn" onclick="doPrint()">&#128438; Save / Print as PDF</button>
+    <button class="pdf-btn share-btn" onclick="doShare()">&#8679; Share Results</button>
+  </div>
+</div>
 
 <footer>
   <strong>Traffic Management Calculator</strong><br>
@@ -766,6 +839,11 @@ const STATE_INFO = {
     name: 'Northern Territory',
     badges: ['AS1742.3', 'Table 4.3'],
     refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  ACT: {
+    name: 'Australian Capital Territory',
+    badges: ['AGTTM03-21', 'AGTTM04-21', 'AGTTM05-21', 'AS1742.3'],
+    refs: 'AGTTM03-21, AGTTM04-21 &amp; AGTTM05-21 (Austroads Guide to Temporary Traffic Management) and AS1742.3-2019. Queue length calculated using Table 4.3 multiplier method. Administered by ACT Government Transport Canberra and City Services (TCCS).',
   },
   WA:  {
     name: 'Western Australia',
