@@ -808,6 +808,8 @@ const SIGNS = {
     arrowBoard:     'Arrow board / attenuator',
   }
 };
+// ACT uses DEFAULT signs (generic Australian standards)
+SIGNS.ACT = SIGNS.DEFAULT;
 
 // ═══════════════ STATE ══════════════════════════════════════════════════════════
 
@@ -862,10 +864,8 @@ const STATE_INFO = {
   },
 };
 
-function sel(btn, s) {
+function selState(s) {
   state = s;
-  document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
 
   // Update header badges to show only the selected state's references
   const info = STATE_INFO[s];
@@ -883,12 +883,11 @@ function sel(btn, s) {
 
   // Show only the relevant traffic-data form
   ['vic','wa','nsw','qld'].forEach(id => hide('form-' + id));
-  if (['VIC','SA','TAS','NT'].includes(s)) show('form-vic');
+  if (['VIC','SA','TAS','NT','ACT'].includes(s)) show('form-vic');
   else if (s === 'WA')  show('form-wa');
   else if (s === 'NSW') show('form-nsw');
   else if (s === 'QLD') show('form-qld');
 
-  show('card2'); show('card3'); show('calcCard');
   hide('resultsArea');
 }
 
@@ -1474,7 +1473,7 @@ function calculate() {
 
   // --- EoQ ---
   let eoqResult = null;
-  if (['VIC','SA','TAS','NT'].includes(state)) eoqResult = eoqVic(vPosted, env);
+  if (['VIC','SA','TAS','NT','ACT'].includes(state)) eoqResult = eoqVic(vPosted, env);
   else if (state === 'WA')  eoqResult = eoqWA(vPosted);
   else if (state === 'NSW') eoqResult = eoqNSW(vPosted, env);
   else if (state === 'QLD') eoqResult = eoqQLD();
@@ -1506,6 +1505,8 @@ function calculate() {
     buf, sp: signResult.sp, D, Q, works, sgns: sgn(), workLen: workArea,
   });
 
+  const nL = parseInt(v('numLanes')) || 1;
+
   // --- Render ---
   document.getElementById('body-eoq').innerHTML     = eoqResult.html;
   document.getElementById('body-taper').innerHTML   = taperResult.html;
@@ -1514,7 +1515,16 @@ function calculate() {
   document.getElementById('body-summary').innerHTML = summaryHtml;
   document.getElementById('body-diagram').innerHTML = diagramHtml;
 
+  document.getElementById('calcSummaryBar').innerHTML =
+    `Calculated for: <strong>${(STATE_INFO[state]||{}).name}</strong> &bull; ` +
+    `Posted: <strong>${vPosted} km/h</strong> &bull; ` +
+    `Work Zone: <strong>${vWork ? vWork+' km/h' : 'No reduction'}</strong> &bull; ` +
+    `${nL} lane${nL>1?'s':''} &bull; ` +
+    `${TMP_NAMES[v('tmpType')]||''}`;
+  document.getElementById('calcSummaryBar').style.display = 'block';
+
   show('resultsArea');
+  document.getElementById('pdfBar').style.display = 'block';
   document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -1537,6 +1547,7 @@ const TMP_REG = {
     SA:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
     TAS:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
     NT:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements. Merge taper, buffer &amp; advance warning signs required. Traffic queue monitoring mandatory.',
   },
   'shuttleflow': {
     NSW:'AGTTM04-21 — Shuttleflow requires traffic controllers or portable traffic signals at each end. Max single-lane section per AS1742.3 Table 4.9. PREPARE TO STOP (T1-18B) required.',
@@ -1546,6 +1557,7 @@ const TMP_REG = {
     SA:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
     TAS:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
     NT:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
+    ACT:'AGTTM04-21 — Shuttleflow requires traffic controllers or portable traffic signals at each end per AS1742.3 Table 4.9.',
   },
   'contraflow': {
     NSW:'AGTTM05-21 — Contraflow requires lane separation devices, overhead signing and detailed TMP. RMS/TfNSW approval required.',
@@ -1555,6 +1567,7 @@ const TMP_REG = {
     SA:'AS1742.3-2019 — Contraflow — consult DPTI/DIT for approval.',
     TAS:'AS1742.3-2019 — Contraflow — consult DIER/DSG for approval.',
     NT:'AS1742.3-2019 — Contraflow — consult DIPL for approval.',
+    ACT:'AGTTM05-21 — Contraflow requires TCCS approval and comprehensive TMP. Rigid separation required.',
   },
   'lane-narrow': {
     NSW:'AGTTM04-21 — Lane narrowing using delineation devices. Minimum lane width per AS1742.3 and TfNSW requirements.',
@@ -1564,6 +1577,7 @@ const TMP_REG = {
     SA:'AS1742.3-2019 — Lane narrowing with delineation.',
     TAS:'AS1742.3-2019 — Lane narrowing with delineation.',
     NT:'AS1742.3-2019 — Lane narrowing with delineation.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
   },
   'shoulder': {
     NSW:'AGTTM04-21 — Works in shoulder. If works encroach on travel lane, full lane-closure treatment required.',
@@ -1573,6 +1587,7 @@ const TMP_REG = {
     SA:'AS1742.3-2019 — Works in shoulder. Delineation required.',
     TAS:'AS1742.3-2019 — Works in shoulder.',
     NT:'AS1742.3-2019 — Works in shoulder.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
   },
   'median': {
     NSW:'AGTTM04-21 — Works on median. Where works require encroachment on travel lanes, full lane-closure treatment required on affected carriageway.',
@@ -1580,6 +1595,7 @@ const TMP_REG = {
     WA:'WA CoP — Median works. Consider sight-line impacts and proximity to travel lanes.',
     VIC:'AS1742.3-2019 — Median works. Signing required on adjacent carriageways if proximity risk exists.',
     SA:'AS1742.3-2019 — Median works.', TAS:'AS1742.3-2019 — Median works.', NT:'AS1742.3-2019 — Median works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
   },
   'footpath': {
     NSW:'AGTTM04-21 — Works on footpath. Pedestrian detour required with ACROD-compliant alternative path. Works affecting carriageway require lane-closure treatment.',
@@ -1587,6 +1603,7 @@ const TMP_REG = {
     WA:'WA CoP — Footpath works. Pedestrian detour and hoarding/fencing where required.',
     VIC:'AS1742.3-2019 — Footpath works. Pedestrian management required.',
     SA:'AS1742.3-2019 — Footpath works.', TAS:'AS1742.3-2019 — Footpath works.', NT:'AS1742.3-2019 — Footpath works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
   },
   'carpark': {
     NSW:'AGTTM04-21 — Car park occupation. Suitable alternative parking and clear wayfinding required. Works must not obstruct access to adjacent premises without authority.',
@@ -1594,6 +1611,7 @@ const TMP_REG = {
     WA:'WA CoP — Car park works. Liaise with local council/property owner.',
     VIC:'AS1742.3-2019 — Car park works.',
     SA:'AS1742.3-2019 — Car park works.', TAS:'AS1742.3-2019 — Car park works.', NT:'AS1742.3-2019 — Car park works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
   },
 };
 
@@ -1724,7 +1742,7 @@ function tmGeo(mt, ct, buf, sp, workLen, nLanes, extraApproach=0) {
   const roadH = nLanes*LANE_H;
   const RBOT = RTOP+roadH;
   const DIMY = RBOT+30;
-  const SVGH = DIMY+55;
+  const SVGH = DIMY+75;  // was DIMY+55
   const SVGW = AVAIL+LM+RM;
 
   const X = (d)=> LM + d*s;
@@ -1841,11 +1859,17 @@ function svgLaneClosure(p) {
   // END ROAD WORK
   s += signBox(xSE, signY, [sgns.endRoadwork.split('(')[0].trim(), sgns.endRoadwork.includes('(')?'('+sgns.endRoadwork.split('(')[1]:''].filter(Boolean), 'end');
 
-  // Dimension arrows ─────────────────────────
-  s += dimArr(xS1, DIMY, xS2, sp+' m (sign spacing)');
-  s += dimArr(xTS, DIMY+18, xTE, mt+' m (taper)');
-  s += dimArr(xTE, DIMY+18, xWS, buf+' m (buffer)');
-  s += dimArr(xCS, DIMY+18, xCE, ct+' m (closing)');
+  // Dimension arrows — all annotated ─────────────────────────
+  const dy0 = DIMY, dy1 = DIMY+18, dy2 = DIMY+36;
+  s += dimArr(xS1, dy0, xS2, sp+' m');
+  s += dimArr(xS2, dy0, xS3, sp+' m');
+  s += dimArr(xS3, dy0, xTS, sp+' m');
+  s += dimArr(xTS, dy1, xTE, mt+' m merge taper');
+  s += dimArr(xTE, dy1, xWS, buf+' m buffer');
+  s += dimArr(xWS, dy2, xWE, workLen+' m work area');
+  s += dimArr(xWE, dy1, xCS, buf+' m buffer');
+  s += dimArr(xCS, dy1, xCE, ct+' m closing taper');
+  s += dimArr(xCE, dy0, xSE, sp+' m');
 
   // Speed labels on road
   s += svgText(xS1-20, RTOP+openH/2+(nLanes>1?LANE_H:0)+5, vPosted+' km/h', 'middle', 9, 'white', true, 'transform="rotate(-90,'+(xS1-20)+','+(RTOP+openH/2+(nLanes>1?LANE_H:0)+5)+')"');
@@ -1936,10 +1960,13 @@ function svgShuttleflow(p) {
     s += dimArr(xTE, DIMY, xD, p.D+' m (D)');
   }
 
-  // Dimensions
+  // Dimensions — sign spacings and tapers
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
   s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
   s += dimArr(xTE,DIMY+36,xCS,'One-lane section: '+workLen+' m');
   s += dimArr(xCS,DIMY+18,xCE,ct+' m (taper)');
+  s += dimArr(xCE,DIMY,xSE,sp+' m');
 
   // Speed tags
   s += `<rect x="0" y="${r(RTOP-13)}" width="38" height="12" rx="3" fill="#1a365d" opacity="0.85"/>`;
@@ -2001,8 +2028,10 @@ function svgLaneNarrow(p) {
   if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2, signY+12, vWork);
   s += signBox(xSE, signY, [sgns.endRoadwork.split('(')[0].trim()], 'end');
 
-  // Dimensions
-  s += dimArr(xTS,DIMY,xTE,mt+' m (taper)');
+  // Dimensions — sign spacings and zones
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
+  s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
   s += dimArr(xTE,DIMY+18,xCS,workLen+' m (narrowed zone)');
   s += svgText(SVGW/2,RTOP+narrowPx/2+4,'Delineation devices','middle',8,'white',true);
 
@@ -2124,9 +2153,11 @@ function svgShoulder(p) {
   if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2,signY+12,vWork);
   s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
 
-  s += dimArr(xTS,DIMY,xTE,mt+' m (taper)');
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
+  s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
   s += dimArr(xTE,DIMY+18,xWS,p.buf+' m (buffer)');
-  s += dimArr(xWS,DIMY+36,xWE,workLen+' m (shoulder works)');
+  s += dimArr(xWS,DIMY+36,xWE,workLen+' m work area');
 
   s += svgText(30,RTOP-20,'→ Direction of Travel','start',9,'#1a365d',false);
   s += svgText(30,RTOP+4,'Shoulder','start',8,'#166534',false);
@@ -2378,6 +2409,24 @@ function generateTMPDiagram(p) {
       Dimensions shown are calculated estimates — verify on site.
     </p>
   `;
+}
+
+// ═══════════════ PDF / SHARE ════════════════════════════════════════════════════
+
+function doPrint() { window.print(); }
+
+async function doShare() {
+  const title = 'Traffic Management Calculation — ' + state + ' ' + n('postedSpeed') + ' km/h';
+  const text = [
+    'Traffic Management Calculator Results',
+    'State: ' + (STATE_INFO[state]||{}).name,
+    'Posted Speed: ' + n('postedSpeed') + ' km/h',
+    'Work Zone Speed: ' + (v('workSpeed')||'No reduction'),
+    'Refer to printed report for full details.',
+  ].join('\n');
+  if (navigator.share) {
+    try { await navigator.share({ title, text }); } catch(e) { if(e.name!=='AbortError') doPrint(); }
+  } else { doPrint(); }
 }
 
 // ═══════════════ INIT ═══════════════════════════════════════════════════════════
