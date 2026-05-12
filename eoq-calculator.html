@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EoQ Traffic Management Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+      color: white;
+      padding: 22px 40px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    header h1 { font-size: 1.75rem; font-weight: 700; }
+    header p  { font-size: 0.88rem; opacity: 0.82; margin-top: 5px; }
+
+    .container { max-width: 920px; margin: 30px auto; padding: 0 20px; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      color: #1a365d;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* ── State buttons ─────────────────────────────── */
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+    }
+    .state-btn {
+      padding: 12px 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      background: white;
+      color: #4a5568;
+      transition: all 0.18s;
+    }
+    .state-btn:hover { border-color: #2b6cb0; color: #2b6cb0; background: #ebf8ff; }
+    .state-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+
+    /* ── Form elements ──────────────────────────────── */
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.88rem; color: #2d3748; }
+    .hint { font-size: 0.78rem; color: #718096; margin-top: 4px; }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 9px 13px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: white;
+      color: #2d3748;
+      transition: border-color 0.18s;
+    }
+    input[type="number"]:focus, select:focus { outline: none; border-color: #2b6cb0; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 580px) {
+      .form-row, .form-row.three { grid-template-columns: 1fr; }
+    }
+
+    /* ── Tabs ───────────────────────────────────────── */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      padding: 7px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: white;
+      color: #718096;
+      transition: all 0.18s;
+    }
+    .tab.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+
+    /* ── Section label ──────────────────────────────── */
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #718096;
+      margin: 18px 0 14px;
+    }
+
+    /* ── Formula box ────────────────────────────────── */
+    .formula-box {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: #4a5568;
+    }
+    .formula-box strong { color: #1a365d; }
+
+    /* ── Calculate button ───────────────────────────── */
+    .calc-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #2b6cb0 0%, #1a365d 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.18s, transform 0.1s;
+    }
+    .calc-btn:hover { opacity: 0.93; transform: translateY(-1px); }
+    .calc-btn:active { transform: translateY(0); }
+
+    /* ── Results ────────────────────────────────────── */
+    .results { display: none; }
+    .results.show { display: block; }
+
+    .result-hero {
+      background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+      color: white;
+      border-radius: 10px;
+      padding: 26px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .result-hero .hero-label { font-size: 0.88rem; opacity: 0.82; margin-bottom: 6px; }
+    .result-hero .hero-value { font-size: 3.2rem; font-weight: 800; line-height: 1; }
+    .result-hero .hero-unit  { font-size: 1.1rem; opacity: 0.82; margin-top: 4px; }
+
+    .result-table {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .result-table h3 { font-size: 0.92rem; color: #1a365d; margin-bottom: 10px; }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.87rem;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .rkey { color: #718096; }
+    .result-row .rval { font-weight: 600; color: #2d3748; }
+
+    /* ── Alert boxes ────────────────────────────────── */
+    .box { border-radius: 6px; padding: 11px 15px; margin-top: 12px; font-size: 0.85rem; }
+    .box-warn  { background: #fff5f5; border-left: 4px solid #e53e3e; color: #c53030; }
+    .box-info  { background: #ebf8ff; border-left: 4px solid #2b6cb0; color: #2c5282; }
+    .box-ok    { background: #f0fff4; border-left: 4px solid #38a169; color: #276749; }
+
+    /* ── Reference table ────────────────────────────── */
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+    .ref-table th { background: #1a365d; color: white; padding: 8px 14px; text-align: center; }
+    .ref-table td { padding: 7px 14px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    .ref-table tr:nth-child(even) td { background: #f7fafc; }
+
+    .hidden { display: none; }
+
+    footer {
+      text-align: center;
+      padding: 24px 20px;
+      color: #718096;
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>EoQ Traffic Management Calculator</h1>
+  <p>End of Queue Estimation Tool &mdash; Australian State &amp; Territory Regulations</p>
+</header>
+
+<div class="container">
+
+  <!-- ── Step 1: State Selection ── -->
+  <div class="card">
+    <h2>1. Select State / Territory</h2>
+    <div class="state-grid">
+      <button class="state-btn" onclick="selectState(this,'VIC')">VIC</button>
+      <button class="state-btn" onclick="selectState(this,'SA')">SA</button>
+      <button class="state-btn" onclick="selectState(this,'TAS')">TAS</button>
+      <button class="state-btn" onclick="selectState(this,'NT')">NT</button>
+      <button class="state-btn" onclick="selectState(this,'WA')">WA</button>
+      <button class="state-btn" onclick="selectState(this,'NSW')">NSW</button>
+      <button class="state-btn" onclick="selectState(this,'QLD')">QLD</button>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Input Form ── -->
+  <div class="card hidden" id="inputCard">
+    <h2 id="inputCardTitle">2. Enter Site Details</h2>
+
+    <!-- VIC / SA / TAS / NT -->
+    <div id="form-vic" class="hidden">
+      <div class="formula-box">
+        <strong>Formula (Table 4.3):</strong><br>
+        (Average vehicles &times; Ma) + (Oversized vehicles &times; Mo) = Queue length (m)
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Average Vehicles &mdash; 5-minute count</label>
+          <input type="number" id="vic-avg" min="0" step="1" placeholder="e.g. 15">
+          <div class="hint">Count cars, utes, vans, light vehicles</div>
+        </div>
+        <div class="form-group">
+          <label>Oversized / Heavy Vehicles &mdash; 5-minute count</label>
+          <input type="number" id="vic-ov" min="0" step="1" placeholder="e.g. 3">
+          <div class="hint">Trucks, B-doubles, semi-trailers, buses</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Maximum Stop Time</label>
+          <select id="vic-stop">
+            <option value="2">2 minutes</option>
+            <option value="5" selected>5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes *</option>
+          </select>
+          <div class="hint">* Unusual; only for specific circumstances</div>
+        </div>
+        <div class="form-group">
+          <label>Road Environment</label>
+          <select id="vic-env">
+            <option value="open">Open Road</option>
+            <option value="builtup">Built-up Area</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Posted Speed Limit (km/h)</label>
+        <input type="number" id="vic-speed" min="10" max="130" step="5" placeholder="e.g. 100">
+      </div>
+    </div>
+
+    <!-- WA -->
+    <div id="form-wa" class="hidden">
+      <div class="formula-box">
+        <strong>WA Method (Main Roads WA):</strong><br>
+        Hourly volume &rarr; vehicles/min &rarr; vehicles stopped &rarr; queue length by vehicle type<br>
+        Each vehicle includes a 3 m inter-vehicle gap. &nbsp;
+        Car: 5.5 m &nbsp;|&nbsp; Truck/Bus: 19 m &nbsp;|&nbsp; Road Train / B-Double: 36.5 m
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hourly Traffic Volume (veh/hr)</label>
+          <input type="number" id="wa-hourly" min="0" placeholder="e.g. 100">
+          <div class="hint">In the direction of travel at time of works</div>
+        </div>
+        <div class="form-group">
+          <label>Maximum Stop Time (minutes)</label>
+          <input type="number" id="wa-stop" min="1" max="120" placeholder="e.g. 5">
+          <div class="hint">Include stop time + clearance time</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Posted Speed Limit (km/h)</label>
+        <input type="number" id="wa-speed" min="10" max="130" step="5" placeholder="e.g. 110">
+      </div>
+      <div class="section-label">Vehicle Composition (%)</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Cars (%)</label>
+          <input type="number" id="wa-car" min="0" max="100" placeholder="e.g. 90" oninput="checkPct('wa')">
+          <div class="hint">5.5 m + 3 m gap = 8.5 m</div>
+        </div>
+        <div class="form-group">
+          <label>Trucks / Buses (%)</label>
+          <input type="number" id="wa-truck" min="0" max="100" placeholder="e.g. 10" oninput="checkPct('wa')">
+          <div class="hint">19 m + 3 m gap = 22 m</div>
+        </div>
+        <div class="form-group">
+          <label>Road Trains / B-Doubles (%)</label>
+          <input type="number" id="wa-rt" min="0" max="100" placeholder="e.g. 0" oninput="checkPct('wa')">
+          <div class="hint">36.5 m + 3 m gap = 39.5 m</div>
+        </div>
+      </div>
+      <div class="box box-warn hidden" id="wa-pct-warn">Vehicle percentages must add up to 100%.</div>
+    </div>
+
+    <!-- NSW -->
+    <div id="form-nsw" class="hidden">
+      <div class="formula-box">
+        <strong>NSW Method (Transport for NSW TM):</strong><br>
+        Hourly volume &rarr; vehicles/min &rarr; vehicles stopped &rarr; queue by vehicle type.<br>
+        Sight distance: <strong>2D</strong> for speeds &gt; 65 km/h &nbsp;|&nbsp; <strong>1.5D</strong> for speeds &le; 65 km/h.
+        D = posted speed in m (for speeds &gt; 65 km/h) per AS1742.3.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hourly Traffic Volume (veh/hr)</label>
+          <input type="number" id="nsw-hourly" min="0" placeholder="e.g. 100">
+        </div>
+        <div class="form-group">
+          <label>Maximum Stop Time (minutes)</label>
+          <input type="number" id="nsw-stop" min="1" max="120" placeholder="e.g. 5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Posted Speed Limit (km/h)</label>
+          <input type="number" id="nsw-speed" min="10" max="130" step="5" placeholder="e.g. 80">
+        </div>
+        <div class="form-group">
+          <label>Road Environment</label>
+          <select id="nsw-env">
+            <option value="open">Open Road (&gt; 65 km/h)</option>
+            <option value="builtup">Built-up Area (&le; 65 km/h)</option>
+          </select>
+        </div>
+      </div>
+      <div class="section-label">Vehicle Composition (%)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cars / Light Vehicles (%)</label>
+          <input type="number" id="nsw-car" min="0" max="100" placeholder="e.g. 90" oninput="checkPct('nsw')">
+          <div class="hint">5.5 m + 3 m gap = 8.5 m</div>
+        </div>
+        <div class="form-group">
+          <label>Heavy Vehicles (%)</label>
+          <input type="number" id="nsw-heavy" min="0" max="100" placeholder="e.g. 10" oninput="checkPct('nsw')">
+          <div class="hint">19 m + 3 m gap = 22 m</div>
+        </div>
+      </div>
+      <div class="box box-warn hidden" id="nsw-pct-warn">Vehicle percentages must add up to 100%.</div>
+    </div>
+
+    <!-- QLD -->
+    <div id="form-qld" class="hidden">
+      <div class="tabs">
+        <button class="tab active" id="tab-count"       onclick="setQldTab(this,'count')">5-Minute Count</button>
+        <button class="tab"        id="tab-aadt-hourly" onclick="setQldTab(this,'aadt-hourly')">AADT + Hourly Breakdown</button>
+        <button class="tab"        id="tab-aadt"        onclick="setQldTab(this,'aadt')">AADT Only</button>
+      </div>
+
+      <!-- QLD mode 1 -->
+      <div id="qld-count">
+        <div class="formula-box">
+          <strong>QLD Formula (Table 4.3 — TMR Guide):</strong><br>
+          (Average vehicles &times; Ma) + (Heavy vehicles &times; Mo) = Queue length (m)<br>
+          Minimum: round up to at least 1 average vehicle + 1 heavy vehicle.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Average Vehicles &mdash; 5-min count</label>
+            <input type="number" id="qld-avg" min="0" step="1" placeholder="e.g. 12">
+          </div>
+          <div class="form-group">
+            <label>Heavy Vehicles &mdash; 5-min count</label>
+            <input type="number" id="qld-heavy" min="0" step="1" placeholder="e.g. 3">
+          </div>
+        </div>
+      </div>
+
+      <!-- QLD mode 2 -->
+      <div id="qld-aadt-hourly" class="hidden">
+        <div class="formula-box">
+          <strong>From AADT with hourly breakdown:</strong><br>
+          5-min estimate = Peak hourly &divide; 12 &divide; 2 (two-way road)
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Peak Hourly Traffic Volume (veh/hr)</label>
+            <input type="number" id="qld-ph" min="0" placeholder="e.g. 300">
+            <div class="hint">For the approach direction being controlled</div>
+          </div>
+          <div class="form-group">
+            <label>Heavy Vehicle Proportion (%)</label>
+            <input type="number" id="qld-ph-hv" min="0" max="100" placeholder="e.g. 15">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Road Direction</label>
+          <select id="qld-ph-road">
+            <option value="twoway">Two-way road (divide by 2 for one direction)</option>
+            <option value="oneway">One-way / already directional count</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- QLD mode 3 -->
+      <div id="qld-aadt" class="hidden">
+        <div class="formula-box">
+          <strong>From AADT only:</strong><br>
+          5-min estimate = AADT &divide; 10 &divide; 12 &divide; 2 (two-way road)
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>AADT (Annual Average Daily Traffic)</label>
+            <input type="number" id="qld-aadt-val" min="0" placeholder="e.g. 5000">
+          </div>
+          <div class="form-group">
+            <label>Heavy Vehicle Proportion (%)</label>
+            <input type="number" id="qld-aadt-hv" min="0" max="100" placeholder="e.g. 15">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Road Direction</label>
+          <select id="qld-aadt-road">
+            <option value="twoway">Two-way road (divide by 2 for one direction)</option>
+            <option value="oneway">One-way / already directional count</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- QLD common fields -->
+      <div class="form-row" style="margin-top:16px">
+        <div class="form-group">
+          <label>Maximum Stop Time</label>
+          <select id="qld-stop">
+            <option value="2">2 minutes</option>
+            <option value="5" selected>5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes *</option>
+          </select>
+          <div class="hint">Total: stop time + clearance + travel through site</div>
+        </div>
+        <div class="form-group">
+          <label>Permanent Posted Speed (km/h)</label>
+          <input type="number" id="qld-speed" min="10" max="130" step="5" placeholder="e.g. 80">
+          <div class="hint">Prior to any roadwork speed reduction</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Calculate End of Queue &rarr;</button>
+  </div>
+
+  <!-- ── Step 3: Results ── -->
+  <div class="card results" id="resultsCard">
+    <h2>3. Results</h2>
+    <div id="resultsBody"></div>
+  </div>
+
+  <!-- ── Reference Table 4.3 ── -->
+  <div class="card hidden" id="refCard">
+    <h2>Reference &mdash; Table 4.3: Queue Length Multipliers</h2>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Maximum Stop Time (min)</th>
+          <th>Ma &mdash; Average Vehicles</th>
+          <th>Mo &mdash; Oversized / Heavy Vehicles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>2</td><td>2.4</td><td>8</td></tr>
+        <tr><td>5</td><td>6</td><td>20</td></tr>
+        <tr><td>10</td><td>12</td><td>40</td></tr>
+        <tr><td>15</td><td>18</td><td>60</td></tr>
+        <tr><td>30 *</td><td>36</td><td>120</td></tr>
+      </tbody>
+    </table>
+    <div class="hint" style="margin-top:8px">* A 30-minute stop time is unusual but has been included for some circumstances.</div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <p><strong>EoQ Traffic Management Calculator</strong></p>
+  <p>
+    VIC / SA / TAS / NT: Table 4.3 Method &nbsp;&bull;&nbsp;
+    WA: Main Roads WA End-of-Queue Method &nbsp;&bull;&nbsp;
+    NSW: Transport for NSW Traffic Management Method &nbsp;&bull;&nbsp;
+    QLD: TMR Guide to Temporary Traffic Management (Nov 2025)
+  </p>
+  <p>This tool is a guide only. Always verify calculations with a competent person or relevant road authority.</p>
+</footer>
+
+<script>
+  // ── Data tables ─────────────────────────────────────────────────────────────
+  const MA = { 2: 2.4,  5: 6,  10: 12, 15: 18, 30: 36  };
+  const MO = { 2: 8,    5: 20, 10: 40, 15: 60, 30: 120 };
+
+  // WA dimension D (m)
+  function waD(speed) {
+    if (speed <= 55) return 15;
+    if (speed <= 65) return 45;
+    return speed; // equals posted speed in km/h
+  }
+
+  // QLD Table 4.4(b): min distance ROADWORK AHEAD → primary PREPARE TO STOP
+  function qldSignDist(speed) {
+    if (speed <= 55) return 30;
+    if (speed <= 65) return 90;
+    if (speed <= 75) return 140;
+    if (speed <= 85) return 240;
+    return 4 * speed;
+  }
+
+  // QLD Table 4.4(a): max spacing for repeater PREPARE TO STOP signs
+  function qldRepeaterSpacing(speed) { return speed <= 55 ? 60 : 180; }
+
+  // ── State / tab logic ────────────────────────────────────────────────────────
+  let state = null;
+  let qldTab = 'count';
+
+  function selectState(btn, s) {
+    state = s;
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    ['vic','wa','nsw','qld'].forEach(id => hide('form-' + id));
+    hide('resultsCard');
+    document.getElementById('resultsCard').classList.remove('show');
+
+    const titles = {
+      VIC:'VIC', SA:'SA', TAS:'TAS', NT:'NT', WA:'WA', NSW:'NSW', QLD:'QLD'
+    };
+
+    if (['VIC','SA','TAS','NT'].includes(s)) {
+      show('form-vic'); show('refCard');
+    } else if (s === 'WA') {
+      show('form-wa'); hide('refCard');
+    } else if (s === 'NSW') {
+      show('form-nsw'); hide('refCard');
+    } else if (s === 'QLD') {
+      show('form-qld'); show('refCard');
+    }
+
+    document.getElementById('inputCardTitle').textContent =
+      '2. Enter Site Details — ' + s;
+    show('inputCard');
+  }
+
+  function setQldTab(btn, tab) {
+    qldTab = tab;
+    document.querySelectorAll('#form-qld .tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['count','aadt-hourly','aadt'].forEach(id => hide('qld-' + id));
+    show('qld-' + tab);
+  }
+
+  // ── Percentage validation ────────────────────────────────────────────────────
+  function checkPct(s) {
+    let total = 0;
+    let warnId;
+    if (s === 'wa') {
+      total = n('wa-car') + n('wa-truck') + n('wa-rt');
+      warnId = 'wa-pct-warn';
+    } else {
+      total = n('nsw-car') + n('nsw-heavy');
+      warnId = 'nsw-pct-warn';
+    }
+    const el = document.getElementById(warnId);
+    el.classList.toggle('hidden', !(total > 0 && Math.abs(total - 100) > 0.5));
+  }
+
+  // ── Main calculate dispatcher ────────────────────────────────────────────────
+  function calculate() {
+    if (!state) { alert('Please select a state first.'); return; }
+    let html = '';
+    if (['VIC','SA','TAS','NT'].includes(state)) html = calcVic();
+    else if (state === 'WA')  html = calcWA();
+    else if (state === 'NSW') html = calcNSW();
+    else if (state === 'QLD') html = calcQLD();
+    if (!html) return;
+    document.getElementById('resultsBody').innerHTML = html;
+    const card = document.getElementById('resultsCard');
+    card.classList.add('show');
+    card.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── VIC / SA / TAS / NT ──────────────────────────────────────────────────────
+  function calcVic() {
+    const avg  = n('vic-avg');
+    const ov   = n('vic-ov');
+    const stop = parseInt(v('vic-stop'));
+    const speed = n('vic-speed');
+    const env  = v('vic-env');
+
+    if (isNaN(avg) || isNaN(ov)) { alert('Please enter vehicle counts.'); return null; }
+
+    const ma = MA[stop];
+    const mo = MO[stop];
+    const queue = (avg * ma) + (ov * mo);
+
+    const sdMult = env === 'open' ? 2 : 1.5;
+    const sdLabel = env === 'open' ? 'open road' : 'built-up area';
+    const sd = !isNaN(speed) ? sdMult * speed : null;
+
+    let sightHtml = '';
+    if (sd !== null) {
+      sightHtml = row('Required sight distance to end of queue',
+        `${sd} m &nbsp;(${sdMult} &times; ${speed} km/h &mdash; ${sdLabel})`);
+    }
+
+    let alertHtml = '';
+    if (!isNaN(speed) && speed > 70) {
+      alertHtml += `<div class="box box-warn">
+        Speed &gt; 70 km/h: collision risk if sight distance to end of queue is less than
+        ${sd !== null ? sd + ' m' : sdMult + ' &times; speed limit'}.
+        Verify adequate sight distance before proceeding.
+      </div>`;
+    }
+    if (sd !== null) {
+      alertHtml += `<div class="box box-info">
+        <strong>Minimum sight distance required:</strong> ${sd} m
+        (${sdMult === 2 ? '2' : '1.5'} &times; ${speed} km/h &mdash; ${sdLabel}).
+        Ensure the PREPARE TO STOP sign location and end of queue are visible from at least this distance.
+      </div>`;
+    }
+
+    return hero(Math.round(queue)) + `
+      <div class="result-table">
+        <h3>Calculation Breakdown</h3>
+        ${row('State / Regulation', state + ' &mdash; Table 4.3 Method')}
+        ${row('Average vehicles (5-min count)', avg)}
+        ${row('Oversized / Heavy vehicles (5-min count)', ov)}
+        ${row('Maximum stop time', stop + ' min')}
+        ${row('Multiplier Ma (average vehicles)', ma)}
+        ${row('Multiplier Mo (oversized vehicles)', mo)}
+        ${row('Average vehicles contribution', avg + ' &times; ' + ma + ' = <strong>' + (avg * ma) + ' m</strong>')}
+        ${row('Oversized vehicles contribution', ov + ' &times; ' + mo + ' = <strong>' + (ov * mo) + ' m</strong>')}
+        ${row('Total estimated queue length', '<strong>' + queue + ' m</strong>')}
+        ${sightHtml}
+      </div>
+      ${alertHtml}
+      <div class="box box-info" style="margin-top:12px">
+        <strong>Note:</strong> If more accurate traffic count data is available, use it instead of the
+        5-minute count. If you are unsure of the correct stop time or multiplier, seek advice from a
+        competent person or the relevant road authority.
+      </div>`;
+  }
+
+  // ── WA ───────────────────────────────────────────────────────────────────────
+  function calcWA() {
+    const hourly = n('wa-hourly');
+    const stop   = n('wa-stop');
+    const speed  = n('wa-speed');
+    const pCar   = n('wa-car')   || 0;
+    const pTruck = n('wa-truck') || 0;
+    const pRT    = n('wa-rt')    || 0;
+
+    if (isNaN(hourly) || isNaN(stop)) { alert('Please enter hourly volume and stop time.'); return null; }
+
+    const totalPct = pCar + pTruck + pRT;
+    if (totalPct > 0 && Math.abs(totalPct - 100) > 1) {
+      alert('Vehicle percentages must add up to 100%.'); return null;
+    }
+
+    const vpm      = hourly / 60;
+    const totalVeh = vpm * stop;
+    const nCar     = totalVeh * (pCar   / 100);
+    const nTruck   = totalVeh * (pTruck / 100);
+    const nRT      = totalVeh * (pRT    / 100);
+
+    const carQ   = nCar   * 8.5;   // 5.5 + 3
+    const truckQ = nTruck * 22;    // 19  + 3
+    const rtQ    = nRT    * 39.5;  // 36.5 + 3
+    const total  = carQ + truckQ + rtQ;
+
+    let signHtml = '';
+    if (!isNaN(speed)) {
+      const D    = waD(speed);
+      const fourD = 4 * D;
+      const status = total > fourD
+        ? `<div class="box box-warn">
+            Predicted queue (${Math.round(total)} m) exceeds 4D (${fourD} m).
+            Install an additional PREPARE TO STOP sign at the predicted end of queue
+            (Figure 2 layout applies &mdash; queue &gt; 4D).
+           </div>`
+        : `<div class="box box-ok">
+            Predicted queue (${Math.round(total)} m) is within 4D (${fourD} m).
+            Standard Figure 1 layout applies.
+           </div>`;
+      signHtml = `
+        <div class="result-table">
+          <h3>Sign Placement &mdash; WA Requirements</h3>
+          ${row('Posted speed limit', speed + ' km/h')}
+          ${row('Dimension D', D + ' m')}
+          ${row('Primary PREPARE TO STOP sign', 'Minimum <strong>' + (2 * D) + ' m (2D)</strong> from end of queue')}
+          ${row('Minimum sight distance to end of queue', (2 * D) + ' m (2D)')}
+          ${row('Predicted queue vs 4D threshold', Math.round(total) + ' m vs ' + fourD + ' m')}
+        </div>
+        ${status}`;
+    }
+
+    return hero(Math.round(total)) + `
+      <div class="result-table">
+        <h3>Calculation Breakdown</h3>
+        ${row('Hourly traffic volume', hourly + ' veh/hr')}
+        ${row('Vehicles per minute', vpm.toFixed(2) + ' veh/min &nbsp;(' + hourly + ' &divide; 60)')}
+        ${row('Maximum stop time', stop + ' min')}
+        ${row('Total vehicles in queue', totalVeh.toFixed(1) + ' veh')}
+        ${row('Cars (' + pCar + '%)', nCar.toFixed(1) + ' &times; 8.5 m = <strong>' + carQ.toFixed(1) + ' m</strong>')}
+        ${row('Trucks / Buses (' + pTruck + '%)', nTruck.toFixed(1) + ' &times; 22 m = <strong>' + truckQ.toFixed(1) + ' m</strong>')}
+        ${row('Road Trains / B-Doubles (' + pRT + '%)', nRT.toFixed(1) + ' &times; 39.5 m = <strong>' + rtQ.toFixed(1) + ' m</strong>')}
+        ${row('Total estimated queue length', '<strong>' + total.toFixed(1) + ' m</strong>')}
+      </div>
+      ${signHtml}`;
+  }
+
+  // ── NSW ──────────────────────────────────────────────────────────────────────
+  function calcNSW() {
+    const hourly = n('nsw-hourly');
+    const stop   = n('nsw-stop');
+    const speed  = n('nsw-speed');
+    const env    = v('nsw-env');
+    const pCar   = n('nsw-car')   || 0;
+    const pHeavy = n('nsw-heavy') || 0;
+
+    if (isNaN(hourly) || isNaN(stop)) { alert('Please enter hourly volume and stop time.'); return null; }
+
+    const vpm      = hourly / 60;
+    const totalVeh = vpm * stop;
+    const nCar     = totalVeh * (pCar   / 100);
+    const nHeavy   = totalVeh * (pHeavy / 100);
+
+    const carQ   = nCar   * 8.5;
+    const heavyQ = nHeavy * 22;
+    const total  = carQ + heavyQ;
+
+    // NSW: D = posted speed in km/h (for > 65 km/h per AS1742.3)
+    // sight distance = 2D (open) or 1.5D (built-up)
+    let signHtml = '';
+    if (!isNaN(speed)) {
+      const D         = speed; // D equals posted speed in metres
+      const sdMult    = env === 'open' ? 2 : 1.5;
+      const sdLabel   = env === 'open' ? 'open road, &gt;65 km/h' : 'built-up area, &le;65 km/h';
+      const sightDist = sdMult * D;
+      const fourD     = 4 * D;
+
+      const status = total > fourD
+        ? `<div class="box box-warn">
+            Predicted queue (${Math.round(total)} m) exceeds 4D (${fourD} m).
+            Install repeater PREPARE TO STOP signs at intervals of no more than 4D
+            between the primary sign and the control point.
+           </div>`
+        : `<div class="box box-ok">
+            Predicted queue (${Math.round(total)} m) is within 4D (${fourD} m).
+            Standard sign placement applies.
+           </div>`;
+
+      signHtml = `
+        <div class="result-table">
+          <h3>Sign Placement &mdash; NSW Requirements</h3>
+          ${row('Posted speed limit', speed + ' km/h')}
+          ${row('Dimension D', D + ' m')}
+          ${row('Required sight distance to end of queue', sightDist + ' m &nbsp;(' + sdMult + 'D &mdash; ' + sdLabel + ')')}
+          ${row('Primary PREPARE TO STOP sign (min distance from end of queue)', D + ' m (D)')}
+          ${row('4D threshold', fourD + ' m')}
+          ${row('Predicted queue vs 4D', Math.round(total) + ' m vs ' + fourD + ' m')}
+        </div>
+        ${status}
+        <div class="box box-info" style="margin-top:12px">
+          Traffic queues must be monitored at all times to ensure they do not extend beyond the
+          limits of the advance warning signs. The primary PREPARE TO STOP (T1-18) sign must be
+          B-size when placed ahead of the end of queue.
+        </div>`;
+    }
+
+    return hero(Math.round(total)) + `
+      <div class="result-table">
+        <h3>Calculation Breakdown</h3>
+        ${row('Hourly traffic volume', hourly + ' veh/hr')}
+        ${row('Vehicles per minute', vpm.toFixed(2) + ' veh/min')}
+        ${row('Maximum stop time', stop + ' min')}
+        ${row('Total vehicles in queue', totalVeh.toFixed(1) + ' veh')}
+        ${row('Cars / Light vehicles (' + pCar + '%)', nCar.toFixed(1) + ' &times; 8.5 m = <strong>' + carQ.toFixed(1) + ' m</strong>')}
+        ${row('Heavy vehicles (' + pHeavy + '%)', nHeavy.toFixed(1) + ' &times; 22 m = <strong>' + heavyQ.toFixed(1) + ' m</strong>')}
+        ${row('Total estimated queue length', '<strong>' + total.toFixed(1) + ' m</strong>')}
+      </div>
+      ${signHtml}`;
+  }
+
+  // ── QLD ──────────────────────────────────────────────────────────────────────
+  function calcQLD() {
+    const stop  = parseInt(v('qld-stop'));
+    const speed = n('qld-speed');
+    const ma = MA[stop];
+    const mo = MO[stop];
+
+    let avgV, heavyV, dataSource;
+
+    if (qldTab === 'count') {
+      avgV   = n('qld-avg');
+      heavyV = n('qld-heavy');
+      if (isNaN(avgV) || isNaN(heavyV)) { alert('Please enter vehicle counts.'); return null; }
+      dataSource = 'Direct 5-minute count';
+
+    } else if (qldTab === 'aadt-hourly') {
+      const ph   = n('qld-ph');
+      const phHV = n('qld-ph-hv') || 0;
+      const twoway = v('qld-ph-road') === 'twoway';
+      if (isNaN(ph)) { alert('Please enter peak hourly volume.'); return null; }
+      let fiveMin = ph / 12;
+      if (twoway) fiveMin /= 2;
+      heavyV = fiveMin * (phHV / 100);
+      avgV   = fiveMin - heavyV;
+      dataSource = `AADT with hourly breakdown &mdash; ${ph} veh/hr peak${twoway ? ', &divide;2 for direction' : ''}`;
+
+    } else { // aadt
+      const aadt   = n('qld-aadt-val');
+      const aadtHV = n('qld-aadt-hv') || 0;
+      const twoway = v('qld-aadt-road') === 'twoway';
+      if (isNaN(aadt)) { alert('Please enter AADT.'); return null; }
+      let fiveMin = aadt / 10 / 12;
+      if (twoway) fiveMin /= 2;
+      heavyV = fiveMin * (aadtHV / 100);
+      avgV   = fiveMin - heavyV;
+      dataSource = `AADT only &mdash; ${aadt} AADT${twoway ? ', &divide;2 for direction' : ''}`;
+    }
+
+    // QLD: round up to at least 1 each; part lengths rounded up
+    avgV   = Math.max(Math.ceil(avgV), 1);
+    heavyV = Math.max(Math.ceil(heavyV), 1);
+
+    const avgQ   = avgV   * ma;
+    const heavyQ = heavyV * mo;
+    const total  = avgQ + heavyQ;
+
+    let signHtml = '';
+    if (!isNaN(speed)) {
+      const minDist  = qldSignDist(speed);
+      const repeater = qldRepeaterSpacing(speed);
+      signHtml = `
+        <div class="result-table">
+          <h3>Sign Placement &mdash; QLD Requirements (Table 4.4)</h3>
+          ${row('Permanent posted speed', speed + ' km/h')}
+          ${row('Min. distance: ROADWORK AHEAD → primary PREPARE TO STOP (Table 4.4b)', minDist + ' m')}
+          ${row('Max. repeater PREPARE TO STOP sign spacing (Table 4.4a)', repeater + ' m')}
+        </div>`;
+    }
+
+    return hero(Math.round(total)) + `
+      <div class="result-table">
+        <h3>Calculation Breakdown</h3>
+        ${row('Data source', dataSource)}
+        ${row('Average vehicles (5-min equivalent, rounded up)', avgV)}
+        ${row('Heavy vehicles (5-min equivalent, rounded up)', heavyV)}
+        ${row('Maximum stop time', stop + ' min')}
+        ${row('Multiplier Ma (average)', ma)}
+        ${row('Multiplier Mo (heavy)', mo)}
+        ${row('Average vehicle contribution', avgV + ' &times; ' + ma + ' = <strong>' + avgQ + ' m</strong>')}
+        ${row('Heavy vehicle contribution', heavyV + ' &times; ' + mo + ' = <strong>' + heavyQ + ' m</strong>')}
+        ${row('Total estimated queue length', '<strong>' + total + ' m</strong>')}
+      </div>
+      ${signHtml}
+      <div class="box box-info" style="margin-top:12px">
+        <strong>QLD Note:</strong> Minimum queue must include at least one average vehicle and one
+        heavy vehicle. Part vehicle lengths are rounded up. For routes with very long vehicles
+        (outback, mining), use actual vehicle mix lengths for greater accuracy.
+      </div>`;
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function n(id) { return parseFloat(document.getElementById(id).value); }
+  function v(id) { return document.getElementById(id).value; }
+  function show(id) { document.getElementById(id).classList.remove('hidden'); }
+  function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+  function hero(val) {
+    return `<div class="result-hero">
+      <div class="hero-label">Estimated Queue Length</div>
+      <div class="hero-value">${val}</div>
+      <div class="hero-unit">metres</div>
+    </div>`;
+  }
+
+  function row(key, val) {
+    return `<div class="result-row"><span class="rkey">${key}</span><span class="rval">${val}</span></div>`;
+  }
+</script>
+</body>
+</html>
