@@ -322,9 +322,24 @@
 <body>
 
 <header>
-  <h1>Traffic Management Calculator</h1>
-  <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
-  <div class="header-badges" id="headerBadges">
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap">
+    <div style="background:#fff;border-radius:10px;padding:6px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.18)">
+      <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+        <rect width="38" height="38" rx="6" fill="#1a2a4a"/>
+        <polygon points="19,4 34,30 4,30" fill="#f97316" opacity="0.95"/>
+        <text x="19" y="28" text-anchor="middle" font-size="13" font-weight="900" fill="#fff" font-family="Arial,sans-serif">E</text>
+      </svg>
+      <div style="text-align:left;line-height:1.2">
+        <div style="font-size:.95rem;font-weight:900;color:#1a2a4a;letter-spacing:-.01em">EPSICON</div>
+        <div style="font-size:.65rem;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em">Traffic Management</div>
+      </div>
+    </div>
+    <div>
+      <h1>Traffic Management Calculator</h1>
+      <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
+    </div>
+  </div>
+  <div class="header-badges" id="headerBadges" style="margin-top:12px">
     <span class="badge">Select a state to begin</span>
   </div>
 </header>
@@ -2769,12 +2784,53 @@ function generateTMPDiagram(p) {
     D  ? `<span class="dim-badge">D: ${D} m</span>` : '',
   ].filter(Boolean).join('');
 
+  const useAGTTM2 = isAGTTM(state);
+  const agttmNotes = useAGTTM2 ? `
+    <div style="margin-top:14px;border:2px solid #1d4ed8;border-radius:8px;background:#eff6ff;padding:12px 16px">
+      <div style="font-weight:800;color:#1d4ed8;font-size:.82rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">AGTTM Notes — ${state}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">BOLLARD SPACING</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Posted Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Spacing</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">≤ 55 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">4 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">56–75 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">12 m</td></tr>
+            <tr><td style="padding:2px 6px">≥ 76 km/h</td><td style="padding:2px 6px">18 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">TAPER LENGTHS</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Taper</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">50 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">30 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">70 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">115 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">80 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">130 m</td></tr>
+            <tr><td style="padding:2px 6px">100 km/h</td><td style="padding:2px 6px">160 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:2;min-width:240px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:6px">GENERAL NOTES</div>
+          <ul style="font-size:.76rem;color:#1e3a5f;line-height:1.6;padding-left:16px;margin:0">
+            <li>LSM spacing = <strong>24 m</strong> within the taper</li>
+            <li style="color:#dc2626;font-weight:700">Double signage to be used where possible</li>
+            <li>Speed signs in MMS to be displayed on the <strong>traffic side</strong></li>
+            <li style="color:#92400e">Some distances may not be to code due to network restraints</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#1d4ed8;color:#fff;border-radius:6px;padding:8px 14px;font-size:.79rem;font-weight:700;text-align:center;letter-spacing:.02em">
+        PEDESTRIANS ARE TO BE ESCORTED BY TC's PAST THE WORKS AREAS AS REQUIRED
+      </div>
+    </div>` : '';
+
   return `
     <div class="diagram-title">${typeName} — ${state} — ${vPosted} km/h${vWork && vWork<vPosted ? ' → '+vWork+' km/h' : ''} — ${nL} lane${nL>1?'s':''} per direction — ${works==='short'?'Short Term':works==='long'?'Long Term':'Mobile'} Works</div>
     ${regNote ? `<div class="box box-info mb12" style="font-size:.8rem">${regNote}</div>` : ''}
     <div style="margin-bottom:10px">${badges}</div>
     <div class="diagram-scroll">${svgContent}</div>
     ${tmpLegend()}
+    ${agttmNotes}
     <p class="ref-note" style="margin-top:10px">
       This diagram is a schematic guide only. A formal Traffic Guidance Scheme (TGS) / Traffic Management Plan (TMP)
       must be prepared and approved by a competent person in accordance with the applicable state regulations.
@@ -3052,13 +3108,13 @@ function svgAgttmLaneClosure(p) {
   var DIM_Y1=ROAD_BOT+EXTRA_H+14, DIM_Y2=ROAD_BOT+EXTRA_H+34, DIM_Y3=ROAD_BOT+EXTRA_H+54;
   var SVG_H=DIM_Y3+40, SVG_W=AVAIL+LM+RM;
 
-  var total=3*sp+mt+buf+workLen+buf+ct+sp;
+  var total=4*sp+mt+buf+workLen+buf+ct+sp;
   var sc=AVAIL/total;
   function X(d){return LM+d*sc;}
-  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xTS=X(3*sp);
-  var xTE=X(3*sp+mt), xWS=X(3*sp+mt+buf), xWE=X(3*sp+mt+buf+workLen);
-  var xCS=X(3*sp+mt+buf+workLen+buf), xCE=X(3*sp+mt+buf+workLen+buf+ct);
-  var xSE=X(3*sp+mt+buf+workLen+buf+ct+sp);
+  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xS4=X(3*sp), xTS=X(4*sp);
+  var xTE=X(4*sp+mt), xWS=X(4*sp+mt+buf), xWE=X(4*sp+mt+buf+workLen);
+  var xCS=X(4*sp+mt+buf+workLen+buf), xCE=X(4*sp+mt+buf+workLen+buf+ct);
+  var xSE=X(4*sp+mt+buf+workLen+buf+ct+sp);
 
   var closedTop=ROAD_TOP, closedBot=ROAD_TOP+LANE_H, openTop=closedBot;
   var s='';
@@ -3100,7 +3156,7 @@ function svgAgttmLaneClosure(p) {
   if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,closedTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
   if(xCE-xCS>18) s+=svgText((xCS+xCE)/2,closedTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
   // CLOSED label on approach closed lane
-  s+=svgText((xTS/2+xTS/2+xS1/2),closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
+  s+=svgText((xS1+xTS)/2,closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
 
   // ── AGTTM Sign Sequence — Lane Closure ──────────────────────────────────────
   // Speed signs positioned closest to traffic (SNEAR = bottom of shoulder).
@@ -3121,17 +3177,20 @@ function svgAgttmLaneClosure(p) {
     s+=aWarnSign(xS2, SMID, ['LANE','CLOSED','AHEAD']);
   }
 
-  // S3 (45m before taper): Prepare to Stop + Traffic Controller Ahead
+  // S3 (90m before taper): Prepare to Stop + Traffic Controller Ahead
   s+=aRectSign(xS3, SNEAR, ['PREPARE','TO STOP'], '#dc2626','white');
   s+=aWarnSign(xS3, SFAR, ['TRAFFIC','CONTROLLER']);
 
-  // At taper start: Lane Status / Merge sign
-  s+=aRectSign(xTS, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
+  // S4 (45m before taper): Lane Status / Merge — own sign station per AGTTM
+  s+=aRectSign(xS4, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
 
-  // 3× LSM signs evenly spaced within taper
+  // 3× LSM signs at 24m intervals within taper (AGTTM — LSM spacing = 24m)
+  var lsmSpacing = 24 * sc;
   if (xTE-xTS > 10) {
-    var lstep=(xTE-xTS)/4;
-    for (var li=1;li<=3;li++) s+=aRectSign(xTS+li*lstep, SNEAR, ['← LSM'], '#1a365d','white',20,11);
+    for (var li=1;li<=3;li++) {
+      var lx = xTS + li * lsmSpacing;
+      if (lx < xTE) s+=aRectSign(lx, SNEAR, ['← LSM'], '#1a365d','white',20,11);
+    }
   }
 
   // Arrowboard / TMA at end of merge taper (start of work area)
@@ -3141,10 +3200,11 @@ function svgAgttmLaneClosure(p) {
   s+=aRectSign(xSE, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
   s+=aSpdSign(xSE, SNEAR, vPosted);  // release speed — nearest to traffic
 
-  // Dimension lines
+  // Dimension lines — 4 advance warning stations each at sp intervals
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
   s+=aDim(xS2,xS3,DIM_Y1,sp+'m');
-  s+=aDim(xS3,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xS3,xS4,DIM_Y1,sp+'m');
+  s+=aDim(xS4,xTS,DIM_Y1,sp+'m');
   s+=aDim(xTS,xTE,DIM_Y2,mt+'m merge taper');
   s+=aDim(xTE,xWS,DIM_Y2,buf+'m buffer');
   s+=aDim(xWS,xWE,DIM_Y3,workLen+'m work area');
