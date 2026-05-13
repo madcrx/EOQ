@@ -840,12 +840,12 @@ const AGTTM_T57 = [
   [999, null,110, 180],
 ];
 
-// AGTTM Table 5.8 — Distance between tapers (m)
+// AGTTM Table 5.8 — Longitudinal buffer zone / distance between tapers (m)
 function agttmBuf(spd) {
   if (spd <= 45) return 10;
-  if (spd <= 55) return 25;
-  if (spd <= 65) return 70;
-  return Math.round(1.5 * spd);
+  if (spd <= 55) return 30;
+  if (spd <= 65) return 60;
+  return Math.round(1.5 * spd); // 70→105, 80→120, 90→135, 100→150, 110→165
 }
 
 function agttmRow(spd) {
@@ -2799,7 +2799,7 @@ function generateTMPDiagram(p) {
           </table>
         </div>
         <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
-          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">TAPER LENGTHS</div>
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">TAPER LENGTHS (Table 5.7)</div>
           <table style="font-size:.75rem;width:100%;border-collapse:collapse">
             <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Taper</th></tr>
             <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">50 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">30 m</td></tr>
@@ -2807,6 +2807,19 @@ function generateTMPDiagram(p) {
             <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">70 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">115 m</td></tr>
             <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">80 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">130 m</td></tr>
             <tr><td style="padding:2px 6px">100 km/h</td><td style="padding:2px 6px">160 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">BUFFER ZONE (Table 5.8)</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Buffer</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">≤ 45 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">10 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">50 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">30 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">70 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">105 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">80 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">120 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">100 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">150 m</td></tr>
+            <tr><td style="padding:2px 6px">110 km/h</td><td style="padding:2px 6px">165 m</td></tr>
           </table>
         </div>
         <div style="flex:2;min-width:240px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
