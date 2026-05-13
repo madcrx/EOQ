@@ -430,7 +430,7 @@
   <div class="section-label">Traffic Management Arrangement</div>
   <div class="form-group">
     <label>Type of Traffic Management <span class="unit-hint">(TM arrangement to be implemented)</span></label>
-    <select id="tmpType">
+    <select id="tmpType" onchange="onTmpTypeChange(this.value)">
       <option value="shoulder" selected>Works in Shoulder</option>
       <option value="lane-closure">Lane Closure</option>
       <option value="lane-narrow">Lane Narrowing</option>
@@ -447,6 +447,15 @@
     <input type="number" id="workAreaLen" min="10" max="5000" step="10" placeholder="e.g. 100" value="50">
     <div class="hint">Distance from first worker/plant to last; leave blank to use estimated queue length</div>
     <div class="example">Example: 100 (short works), 500 (long resurfacing), 50 (bridge repair)</div>
+  </div>
+  <div class="form-group" id="tcMethodGroup" style="display:none">
+    <label>Traffic Control Method <span class="unit-hint">(at control point)</span></label>
+    <select id="tcMethod">
+      <option value="tc">Traffic Controller (TC)</option>
+      <option value="ptl">Portable Traffic Lights (PTL)</option>
+      <option value="boom">Portable Boom Barrier</option>
+    </select>
+    <div class="hint">Applies to Shuttleflow and Contraflow arrangements requiring a control point. PTL or Portable Boom may substitute a Traffic Controller subject to site risk assessment.</div>
   </div>
 </div>
 
