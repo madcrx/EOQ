@@ -232,78 +232,8 @@
       border-radius:4px; padding:2px 7px; font-size:.72rem; font-weight:700; margin:2px;
     }
 
-    /* ── Dark Theme ── */
-    body.dark {
-      --blue-dark: #93c5fd;
-      --blue:      #60a5fa;
-      --blue-light:#1e3a5f;
-      --gray-bg:   #0f172a;
-      --gray-1:    #1e293b;
-      --gray-2:    #334155;
-      --gray-3:    #94a3b8;
-      --text:      #e2e8f0;
-      --orange:    #fb923c;
-      --green:     #4ade80;
-      --red:       #f87171;
-    }
-    body.dark header { background:linear-gradient(135deg,#0a1628 0%,#1e3a5f 100%) !important; }
-    body.dark .card { background:#1e293b; }
-    body.dark input[type="number"],
-    body.dark select { background:#0f172a; color:#e2e8f0; border-color:#334155; }
-    body.dark select {
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-    }
-    body.dark .formula-box { background:#0f172a; border-color:#334155; color:#94a3b8; }
-    body.dark .kv-row { border-color:#334155; }
-    body.dark .kv-row:nth-child(even) { background:#0f172a; }
-    body.dark .kv-list { border-color:#334155; }
-    body.dark .summary-tile { background:#1e293b; border-color:#334155; }
-    body.dark .diagram-scroll { background:#1e293b; }
-    body.dark footer { background:#1e293b; border-color:#334155; color:#64748b; }
-    body.dark .result-section { border-color:#334155; }
-    body.dark .result-section-header { background:#1e293b; color:#93c5fd; }
-    body.dark .result-section-header:hover { background:#334155; }
-    body.dark .sign-layout { border-color:#334155; }
-    body.dark .sign-row { border-color:#334155; }
-    body.dark .sign-row:nth-child(even) { background:#0f172a; }
-    body.dark .tabs .tab { background:#1e293b; border-color:#334155; color:#94a3b8; }
-    body.dark .tabs .tab.active { background:#2b6cb0; border-color:#2b6cb0; color:#fff; }
-    body.dark .radio-btn { background:#1e293b; border-color:#334155; color:#94a3b8; }
-    body.dark .sign-row.s-works    { background:#2a1f00; }
-    body.dark .sign-row.s-buffer   { background:#2d1818; }
-    body.dark .sign-row.s-taper    { background:#0f2318; }
-    body.dark .sign-row.s-sign-req { background:#2d2800; }
-    body.dark .sign-row.s-sign-spd { background:#2a2000; }
-    body.dark .sign-row.s-sign-warn{ background:#132038; }
-    body.dark .sign-row.s-end      { background:#0f2318; }
-    body.dark .box-warn  { background:#2d1515; border-left-color:#f87171; color:#fca5a5; }
-    body.dark .box-info  { background:#132038; border-left-color:#60a5fa; color:#93c5fd; }
-    body.dark .box-ok    { background:#0f2318; border-left-color:#4ade80; color:#86efac; }
-    body.dark .box-amber { background:#2a1f00; border-left-color:#fb923c; color:#fdba74; }
-    body.dark .divider   { border-color:#334155; }
-    body.dark .result-hero { background:linear-gradient(135deg,#0a1628,#1e3a5f) !important; }
-    body.dark #pdfBar,
-    body.dark #calcCard { background:#0f172a; }
-    body.dark .dim-badge { background:#1e3a8a; }
-    body.dark .section-label { color:#94a3b8; }
-    body.dark .hint { color:#64748b; }
-    body.dark .unit-hint { color:#64748b; }
-    body.dark .example { color:#60a5fa; }
-    body.dark #printJobCard { background:#1e293b; }
-
-    #darkToggle {
-      position:absolute; right:20px; top:50%; transform:translateY(-50%);
-      background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
-      color:#fff; border-radius:20px; padding:5px 14px; font-size:.78rem;
-      font-weight:700; cursor:pointer; transition:background .15s;
-      white-space:nowrap;
-    }
-    #darkToggle:hover { background:rgba(255,255,255,.25); }
-    header { position:relative; }
-
     /* Mobile touch improvements */
     @media (max-width: 768px) {
-      #darkToggle { right: 10px; padding: 4px 10px; font-size: .72rem; }
       .container { padding: 0 12px; }
       header { padding: 16px 20px; }
       header h1 { font-size: 1.3rem; }
@@ -338,7 +268,6 @@
       body { background: white; font-size: 10pt; }
       header { background: #1a365d !important; padding: 10px 16px; }
       header h1 { font-size: 1.2rem; }
-      #darkToggle { display: none !important; }
 
       .container { max-width: 100%; padding: 0; margin: 0; }
 
@@ -393,7 +322,6 @@
 <body>
 
 <header>
-  <button id="darkToggle" onclick="toggleDark()" title="Toggle dark mode">&#9790; Dark</button>
   <h1>Traffic Management Calculator</h1>
   <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
   <div class="header-badges" id="headerBadges">
@@ -991,19 +919,6 @@ let works   = 'short';
 let roadCat = 1;
 let qldMode = 'count';
 
-// ── Dark theme ────────────────────────────────────────────────────────────────
-function toggleDark() {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('tmDark', isDark ? '1' : '0');
-  document.getElementById('darkToggle').innerHTML = isDark ? '&#9728; Light' : '&#9790; Dark';
-}
-(function(){
-  if (localStorage.getItem('tmDark') === '1') {
-    document.body.classList.add('dark');
-    const btn = document.getElementById('darkToggle');
-    if (btn) btn.innerHTML = '&#9728; Light';
-  }
-})();
 
 // ═══════════════ UI HELPERS ════════════════════════════════════════════════════
 
