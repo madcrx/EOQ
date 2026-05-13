@@ -1512,6 +1512,7 @@ function calculate() {
     state, tmpType: tmpT, vPosted, vWork, numLanes: parseInt(v('numLanes')),
     laneW: n('laneWidth') || 3.5, mt: taperResult.mt, ct: taperResult.ct,
     buf, sp: signResult.sp, D, Q, works, sgns: sgn(), workLen: workArea,
+    tcMethod: v('tcMethod') || 'tc',
   });
 
   const nL = parseInt(v('numLanes')) || 1;
@@ -2372,26 +2373,34 @@ function tmpLegend() {
 
 function generateTMPDiagram(p) {
   const { state, tmpType, vPosted, vWork, numLanes, laneW, mt, ct, buf, sp, D, Q, works, sgns, workLen } = p;
+  const tcMethod = p.tcMethod || 'tc';
   const typeName = TMP_NAMES[tmpType] || tmpType;
   const regNote  = (TMP_REG[tmpType]||{})[state] || (TMP_REG[tmpType]||{}).VIC || '';
   const nL = Math.max(1, Math.min(numLanes||2, 4));
 
   // Compute geometry
   const geo = tmGeo(mt, ct, buf, sp, workLen, nL);
-  const params = { ...p, ...geo, nLanes:nL };
+  const params = { ...p, ...geo, nLanes:nL, tcMethod };
 
   let svgContent = '';
   try {
+    const useAGTTM = isAGTTM(state);
     switch(tmpType) {
-      case 'lane-closure': svgContent = svgLaneClosure(params); break;
-      case 'lane-narrow':  svgContent = svgLaneNarrow(params);  break;
-      case 'shuttleflow':  svgContent = svgShuttleflow(params); break;
-      case 'contraflow':   svgContent = svgContraflow(params);  break;
-      case 'shoulder':     svgContent = svgShoulder(params);    break;
-      case 'median':       svgContent = svgMedian(params);      break;
-      case 'footpath':     svgContent = svgFootpath(params);    break;
-      case 'carpark':      svgContent = svgCarpark(params);     break;
-      default:             svgContent = svgLaneClosure(params);
+      case 'lane-closure':
+        svgContent = useAGTTM ? svgAgttmLaneClosure(params) : svgLaneClosure(params); break;
+      case 'lane-narrow':
+        svgContent = useAGTTM ? svgAgttmLaneNarrow(params) : svgLaneNarrow(params); break;
+      case 'shuttleflow':
+        svgContent = useAGTTM ? svgAgttmShuttleflow(params) : svgShuttleflow(params); break;
+      case 'contraflow':
+        svgContent = useAGTTM ? svgAgttmContraflow(params) : svgContraflow(params); break;
+      case 'shoulder':
+        svgContent = useAGTTM ? svgAgttmShoulder(params) : svgShoulder(params); break;
+      case 'median':    svgContent = svgMedian(params);   break;
+      case 'footpath':  svgContent = svgFootpath(params); break;
+      case 'carpark':   svgContent = svgCarpark(params);  break;
+      default:
+        svgContent = useAGTTM ? svgAgttmLaneClosure(params) : svgLaneClosure(params);
     }
   } catch(e) {
     svgContent = `<div class="box box-warn">Diagram error: ${e.message}</div>`;
@@ -2436,6 +2445,571 @@ async function doShare() {
   if (navigator.share) {
     try { await navigator.share({ title, text }); } catch(e) { if(e.name!=='AbortError') doPrint(); }
   } else { doPrint(); }
+}
+
+// ═══════════════ AGTTM-STYLE DIAGRAMS (VIC / SA / TAS / NT / ACT) ═══════════════
+
+function onTmpTypeChange(val) {
+  const needsCtrl = ['shuttleflow','contraflow'].includes(val);
+  document.getElementById('tcMethodGroup').style.display = needsCtrl ? 'block' : 'none';
+}
+
+function isAGTTM(st) {
+  return ['VIC','SA','TAS','NT','ACT'].includes(st);
+}
+
+// Orange (or custom colour) warning diamond sign
+function aDiamond(cx, cy, lines, col, strokeCol) {
+  col = col || '#f97316'; strokeCol = strokeCol || '#7c2d12';
+  var s2 = 24;
+  var pts = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+  var out = '<polygon points="'+pts+'" fill="'+col+'" stroke="'+strokeCol+'" stroke-width="1.8"/>';
+  var lh = 8.5, nL = lines.length;
+  var startY = cy - (nL - 1) * lh / 2;
+  lines.forEach(function(l, i) {
+    out += '<text x="'+r(cx)+'" y="'+r(startY + i*lh + 2.5)+'" text-anchor="middle" font-size="6.5" font-weight="bold" fill="white">'+l+'</text>';
+  });
+  return out;
+}
+
+// Red-bordered speed limit circle
+function aSpeed(cx, cy, spd) {
+  var fs = (spd >= 100) ? 10 : 12;
+  return '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white" stroke="#dc2626" stroke-width="3.2"/>'+
+         '<text x="'+r(cx)+'" y="'+r(cy+4.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="bold" fill="#1f2937">'+spd+'</text>';
+}
+
+// Green END ROAD WORK diamond
+function aEndSign(cx, cy) {
+  return aDiamond(cx, cy, ['END','ROAD','WORK'], '#16a34a', '#14532d');
+}
+
+// Sign post stem (dashed line from sign bottom to road edge)
+function aStem(cx, botY, roadY) {
+  return '<line x1="'+r(cx)+'" y1="'+r(botY)+'" x2="'+r(cx)+'" y2="'+r(roadY)+'" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="3,2"/>';
+}
+
+// Dimension label with tick marks between x1 and x2 at height y
+function aDim(x1, x2, y, label) {
+  var mx = (x1+x2)/2;
+  return '<line x1="'+r(x1+1)+'" y1="'+r(y)+'" x2="'+r(x2-1)+'" y2="'+r(y)+'" stroke="#1e3a8a" stroke-width="1"/>'+
+         '<line x1="'+r(x1)+'" y1="'+r(y-4)+'" x2="'+r(x1)+'" y2="'+r(y+4)+'" stroke="#1e3a8a" stroke-width="1.5"/>'+
+         '<line x1="'+r(x2)+'" y1="'+r(y-4)+'" x2="'+r(x2)+'" y2="'+r(y+4)+'" stroke="#1e3a8a" stroke-width="1.5"/>'+
+         '<text x="'+r(mx)+'" y="'+r(y-6)+'" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#1e3a8a">'+label+'</text>';
+}
+
+// Traffic Controller figure
+function aTC(cx, cy) {
+  return '<circle cx="'+r(cx)+'" cy="'+r(cy-18)+'" r="6" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>'+
+         '<line x1="'+r(cx)+'" y1="'+r(cy-12)+'" x2="'+r(cx)+'" y2="'+r(cy)+'" stroke="#1e3a8a" stroke-width="2.5"/>'+
+         '<line x1="'+r(cx-8)+'" y1="'+r(cy-7)+'" x2="'+r(cx+8)+'" y2="'+r(cy-7)+'" stroke="#1e3a8a" stroke-width="2"/>'+
+         '<line x1="'+r(cx)+'" y1="'+r(cy)+'" x2="'+r(cx-5)+'" y2="'+r(cy+12)+'" stroke="#1e3a8a" stroke-width="2"/>'+
+         '<line x1="'+r(cx)+'" y1="'+r(cy)+'" x2="'+r(cx+5)+'" y2="'+r(cy+12)+'" stroke="#1e3a8a" stroke-width="2"/>'+
+         '<text x="'+r(cx)+'" y="'+r(cy+24)+'" text-anchor="middle" font-size="7" font-weight="bold" fill="#1e3a8a">TC</text>';
+}
+
+// Portable Traffic Lights / Portable Boom symbol
+function aPTL(cx, cy, label) {
+  label = label || 'PTL';
+  return '<rect x="'+r(cx-9)+'" y="'+r(cy-22)+'" width="18" height="30" rx="3" fill="#1f2937"/>'+
+         '<circle cx="'+r(cx)+'" cy="'+r(cy-14)+'" r="4.5" fill="#ef4444"/>'+
+         '<circle cx="'+r(cx)+'" cy="'+r(cy-3)+'" r="4.5" fill="#fbbf24" opacity="0.4"/>'+
+         '<circle cx="'+r(cx)+'" cy="'+r(cy+8)+'" r="4.5" fill="#22c55e" opacity="0.4"/>'+
+         '<line x1="'+r(cx)+'" y1="'+r(cy+8)+'" x2="'+r(cx)+'" y2="'+r(cy+20)+'" stroke="#475569" stroke-width="2"/>'+
+         '<text x="'+r(cx)+'" y="'+r(cy+30)+'" text-anchor="middle" font-size="7" font-weight="bold" fill="#1e3a8a">'+label+'</text>';
+}
+
+// Control point symbol — TC figure or PTL/Boom based on tcMethod
+function aCtrl(cx, cy, tcMethod) {
+  if (tcMethod === 'ptl') return aPTL(cx, cy, 'PTL');
+  if (tcMethod === 'boom') return aPTL(cx, cy, 'BOOM');
+  return aTC(cx, cy);
+}
+
+// Single orange traffic cone
+function aCone(cx, cy, sz) {
+  sz = sz || 8;
+  return '<polygon points="'+r(cx)+','+r(cy-sz)+' '+r(cx-sz*0.6)+','+r(cy+sz*0.5)+' '+r(cx+sz*0.6)+','+r(cy+sz*0.5)+'" fill="#f97316" stroke="#c2410c" stroke-width="0.8"/>';
+}
+
+// Spread n cones along a line segment
+function aCones(x1, y1, x2, y2, n, sz) {
+  n = n || 5; sz = sz || 7;
+  var s = '';
+  for (var i = 0; i <= n; i++) {
+    var t = i/n;
+    s += aCone(x1 + t*(x2-x1), y1 + t*(y2-y1), sz);
+  }
+  return s;
+}
+
+// Blue traffic flow arrow
+function aFlow(cx, cy, rightDir) {
+  rightDir = (rightDir !== false);
+  var d = rightDir ? 1 : -1;
+  return '<polygon points="'+r(cx+d*14)+','+r(cy)+' '+r(cx)+','+r(cy-6)+' '+r(cx)+','+r(cy+6)+'" fill="#60a5fa" opacity="0.85"/>'+
+         '<line x1="'+r(cx-d*10)+'" y1="'+r(cy)+'" x2="'+r(cx+d*4)+'" y2="'+r(cy)+'" stroke="#60a5fa" stroke-width="2.5" opacity="0.85"/>';
+}
+
+function svgAgttmLaneClosure(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var nL=Math.max(1,p.nLanes||1), vPosted=p.vPosted, vWork=p.vWork;
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=34, SH=18;
+  var SIGN_CY=52, STEM_BOT=76;
+  var ROAD_TOP=90, ROAD_H=nL*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44, DIM_Y3=ROAD_BOT+64;
+  var SVG_H=ROAD_BOT+90, SVG_W=AVAIL+LM+RM;
+
+  var total=3*sp+mt+buf+workLen+buf+ct+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xTS=X(3*sp);
+  var xTE=X(3*sp+mt), xWS=X(3*sp+mt+buf), xWE=X(3*sp+mt+buf+workLen);
+  var xCS=X(3*sp+mt+buf+workLen+buf), xCE=X(3*sp+mt+buf+workLen+buf+ct);
+  var xSE=X(3*sp+mt+buf+workLen+buf+ct+sp);
+
+  var closedTop=ROAD_TOP, closedBot=ROAD_TOP+LANE_H, openTop=closedBot;
+  var stemY=ROAD_TOP-SH;
+  var s='';
+
+  // Background and shoulders
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full road
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Buffer zones (amber) in closed lane
+  s+=svgRect(xTE,closedTop,xCS-xTE,LANE_H,'#fef3c7');
+  // Work area (red hatch) in closed lane
+  s+=svgRect(xWS,closedTop,xWE-xWS,LANE_H,'url(#hWork)');
+  s+=svgRect(xWS,closedTop,xWE-xWS,LANE_H,'#ef4444','opacity="0.28"');
+  // Merge taper
+  s+=svgPoly([[xTS,closedTop],[xTE,closedTop],[xTE,closedBot],[xTS,closedTop]],'#fed7aa');
+  s+=svgLine(xTS,closedTop,xTE,closedBot,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTS,closedTop,xTE,closedBot,Math.max(4,Math.round((xTE-xTS)/26)));
+  // Closing taper
+  s+=svgPoly([[xCS,closedBot],[xCE,closedTop],[xCE,closedBot]],'#fed7aa');
+  s+=svgLine(xCS,closedBot,xCE,closedTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xCS,closedBot,xCE,closedTop,Math.max(3,Math.round((xCE-xCS)/26)));
+  // Lane markings
+  for(var i=1;i<nL;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10" opacity="0.7"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Centreline between closed and open lanes (dashed white)
+  s+=svgLine(0,closedBot,SVG_W,closedBot,'white',1.2,'stroke-dasharray="18,10" opacity="0.55"');
+  // Flow arrow in open lanes
+  var flowY=nL>1?openTop+(nL-1)*LANE_H/2:ROAD_TOP+LANE_H/2;
+  s+=aFlow((xWS+xWE)/2,flowY,true);
+  // Road labels
+  s+=svgText((xWS+xWE)/2,closedTop+LANE_H/2+4,'WORK AREA','middle',7.5,'white',true);
+  if(xWE-xWS>50) s+=svgText((xWS+xWE)/2,closedTop+LANE_H/2+14,workLen+'m','middle',7,'#fca5a5',false);
+  if(xWS-xTE>22) s+=svgText((xTE+xWS)/2,closedTop+LANE_H/2+4,buf+'m buffer','middle',6.5,'#92400e',true);
+  if(xCS-xWE>22) s+=svgText((xWE+xCS)/2,closedTop+LANE_H/2+4,buf+'m buffer','middle',6.5,'#92400e',true);
+  if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,closedTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xCE-xCS>18) s+=svgText((xCS+xCE)/2,closedTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // CLOSED label on approach closed lane
+  s+=svgText((xTS/2+xTS/2+xS1/2),closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
+
+  // Signs
+  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
+  s+=aStem(xS1,SIGN_CY+24,stemY);
+  s+=aDiamond(xS2,SIGN_CY,['LANE','CLOSED','AHEAD']);
+  s+=aStem(xS2,SIGN_CY+24,stemY);
+  if(vWork&&vWork<vPosted){
+    s+=aSpeed(xS3,SIGN_CY,vWork);
+    s+=aStem(xS3,SIGN_CY+18,stemY);
+  } else {
+    s+=aDiamond(xS3,SIGN_CY,['KEEP','LEFT']);
+    s+=aStem(xS3,SIGN_CY+24,stemY);
+  }
+  // MERGE sign at taper start
+  s+=aDiamond(xTS,SIGN_CY,['MERGE'],'#2563eb','#1e3a8a');
+  s+=aStem(xTS,SIGN_CY+24,stemY);
+  // END sign
+  s+=aEndSign(xSE,SIGN_CY);
+  s+=aStem(xSE,SIGN_CY+24,stemY);
+
+  // Dimension lines
+  s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
+  s+=aDim(xS2,xS3,DIM_Y1,sp+'m');
+  s+=aDim(xS3,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xTS,xTE,DIM_Y2,mt+'m merge taper');
+  s+=aDim(xTE,xWS,DIM_Y2,buf+'m buffer');
+  s+=aDim(xWS,xWE,DIM_Y3,workLen+'m work area');
+  s+=aDim(xWE,xCS,DIM_Y2,buf+'m buffer');
+  s+=aDim(xCS,xCE,DIM_Y2,ct+'m closing taper');
+  s+=aDim(xCE,xSE,DIM_Y1,sp+'m');
+
+  // Speed banners
+  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
+  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  if(vWork&&vWork<vPosted){
+    s+=svgRect(xWS-2,ROAD_TOP-14,44,13,'#dc2626','rx="3" opacity="0.9"');
+    s+=svgText(xWS+20,ROAD_TOP-4,vWork+' km/h','middle',7.5,'white',true);
+  }
+  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-28,'LANE CLOSURE — '+p.state+' (AGTTM04 / AS1742.3)','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmShuttleflow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc';
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=18;
+  var SIGN_CY=52, ROAD_TOP=90;
+  var rH=2*LANE_H;
+  var ROAD_BOT=ROAD_TOP+rH;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
+  var stemY=ROAD_TOP-SH;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xRWA1=X2(0), xSpd1=X2(sp), xTCa=X2(sp);
+  var xTSa=X2(sp), xTEa=X2(sp+mt), xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xTCd=X2(sp+mt+workLen+ct), xSpd2=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var lane1Y=ROAD_TOP, lane2Y=ROAD_TOP+LANE_H;
+  var s='';
+
+  // Background + shoulders
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full 2-lane road
+  s+=svgRect(0,ROAD_TOP,SVG_W,rH,'#546e7a');
+  // Work zone (both lanes hatched)
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,rH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,rH,'#ef4444','opacity="0.28"');
+  // One-lane-two-way section: between tapers
+  s+=svgRect(xTEa,lane2Y,xTSd-xTEa,LANE_H,'#1d4ed8','opacity="0.2"');
+  // Approach taper (narrows from 2 to 1 lane on top lane)
+  s+=svgPoly([[xTSa,lane1Y],[xTEa,lane1Y],[xTEa,lane2Y],[xTSa,lane1Y]],'#fed7aa');
+  s+=svgLine(xTSa,lane1Y,xTEa,lane2Y,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,lane1Y,xTEa,lane2Y,Math.max(4,Math.round((xTEa-xTSa)/26)));
+  // Departure taper
+  s+=svgPoly([[xTSd,lane2Y],[xTEd,lane1Y],[xTEd,lane2Y]],'#fed7aa');
+  s+=svgLine(xTSd,lane2Y,xTEd,lane1Y,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,lane2Y,xTEd,lane1Y,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  // Lane markings
+  s+=svgLine(0,lane2Y,SVG_W,lane2Y,'#fbbf24',2);
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow arrows
+  s+=aFlow((xRWA1+xTSa)/2,lane1Y+LANE_H/2,true);
+  s+=aFlow((xTEd+xEND)/2,lane2Y+LANE_H/2,false);
+  // Labels
+  s+=svgText((xWS+xWE)/2,ROAD_TOP+LANE_H+4,'WORK AREA','middle',8,'white',true);
+  s+=svgText((xWS+xWE)/2,ROAD_TOP+LANE_H+15,workLen+'m','middle',7,'#fca5a5',false);
+  if(xTEa-xTSa>28) s+=svgText((xTSa+xTEa)/2,lane1Y+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,lane1Y+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // Single lane section label
+  s+=svgText((xTEa+xTSd)/2,lane2Y+LANE_H/2+4,'ONE LANE TWO WAY','middle',7.5,'#93c5fd',true);
+
+  // Traffic controllers at each end (below road)
+  var ctrlY=ROAD_BOT+SH+8;
+  s+=aCtrl(xTCa,ctrlY,tcMethod);
+  s+=aCtrl(xTCd,ctrlY,tcMethod);
+  // TC label sign: PREPARE TO STOP or STOP ON RED SIGNAL
+  var ctrlSign=(tcMethod==='tc')?['PREPARE','TO STOP']:['STOP ON','RED SIGNAL'];
+  s+=aDiamond(xRWA1+sp*sc*0.5,ROAD_BOT+SH+20,ctrlSign,'#dc2626','#7f1d1d');
+
+  // Signs above road
+  s+=aDiamond(xRWA1,SIGN_CY,['ROAD','WORK','AHEAD']);
+  s+=aStem(xRWA1,SIGN_CY+24,stemY);
+  if(vWork&&vWork<vPosted){
+    s+=aSpeed(xSpd1-sp*sc*0.45,SIGN_CY,vWork);
+    s+=aStem(xSpd1-sp*sc*0.45,SIGN_CY+18,stemY);
+  }
+  // END sign (departure side)
+  s+=aEndSign(xEND,SIGN_CY);
+  s+=aStem(xEND,SIGN_CY+24,stemY);
+
+  // Dimension labels
+  s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
+  s+=aDim(xTSa,xTEa,DIM_Y1,mt+'m taper');
+  s+=aDim(xTEa,xTSd,DIM_Y2,workLen+'m work zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  // Speed banners
+  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
+  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  if(vWork&&vWork<vPosted){
+    s+=svgRect(xWS-2,ROAD_TOP-14,44,13,'#dc2626','rx="3" opacity="0.9"');
+    s+=svgText(xWS+20,ROAD_TOP-4,vWork+' km/h','middle',7.5,'white',true);
+  }
+  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel (Approach)','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_BOT+SH+38,'← Opposing Direction','end',8,'#1d4ed8',false);
+  var ctrlLabel=tcMethod==='tc'?'Traffic Controllers':'Portable Traffic Lights';
+  s+=svgText(SVG_W/2,SVG_H-8,ctrlLabel+' at each end of shuttleflow section','middle',8,'#475569',false);
+
+  return wrapSVG(s,SVG_W,SVG_H+20);
+}
+
+function svgAgttmContraflow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc', nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=34, SH=18, medH=14;
+  var SIGN_CY=52, ROAD_TOP=90;
+  var normalH=nLanes*LANE_H, cfH=LANE_H;
+  var ROAD_BOT=ROAD_TOP+normalH+medH+cfH;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
+  var stemY=ROAD_TOP-SH;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xRWA1=X2(0), xSpd1=X2(sp), xTSa=X2(sp), xTEa=X2(sp+mt);
+  var xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var normalTop=ROAD_TOP, normalBot=ROAD_TOP+normalH;
+  var medTop=normalBot, medBot=medTop+medH;
+  var cfTop=medBot, cfBot=cfTop+cfH;
+  var s='';
+
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,cfBot,SVG_W,SH,'#c8e6c9');
+  // Normal carriageway
+  s+=svgRect(0,normalTop,SVG_W,normalH,'#546e7a');
+  // Median
+  s+=svgRect(0,medTop,SVG_W,medH,'#78909c');
+  s+=svgText(SVG_W/2,medTop+medH/2+3,'MEDIAN','middle',6,'white',false);
+  // Contraflow lane
+  s+=svgRect(0,cfTop,SVG_W,cfH,'#546e7a');
+  // Work area in normal carriageway (top lane)
+  s+=svgRect(xWS,normalTop,xWE-xWS,LANE_H,'url(#hWork)');
+  s+=svgRect(xWS,normalTop,xWE-xWS,LANE_H,'#ef4444','opacity="0.28"');
+  // Contraflow lane work section (occupied by contraflow traffic)
+  s+=svgRect(xTEa,cfTop,xTSd-xTEa,cfH,'#1d4ed8','opacity="0.25"');
+  // Merge tapers
+  s+=svgPoly([[xTSa,normalTop],[xTEa,normalTop],[xTEa,normalTop+LANE_H],[xTSa,normalTop]],'#fed7aa');
+  s+=svgLine(xTSa,normalTop,xTEa,normalTop+LANE_H,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,normalTop,xTEa,normalTop+LANE_H,Math.max(4,Math.round((xTEa-xTSa)/26)));
+  // CF lane taper (approach side of contraflow)
+  s+=svgPoly([[xTSa,cfBot],[xTEa,cfTop],[xTEa,cfBot]],'#fed7aa');
+  s+=svgLine(xTSa,cfBot,xTEa,cfTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,cfBot,xTEa,cfTop,Math.max(3,Math.round((xTEa-xTSa)/26)));
+  // Departure tapers
+  s+=svgPoly([[xTSd,normalTop+LANE_H],[xTEd,normalTop],[xTEd,normalTop+LANE_H]],'#fed7aa');
+  s+=svgLine(xTSd,normalTop+LANE_H,xTEd,normalTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,normalTop+LANE_H,xTEd,normalTop,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  s+=svgPoly([[xTSd,cfTop],[xTEd,cfBot],[xTEd,cfTop]],'#fed7aa');
+  s+=svgLine(xTSd,cfTop,xTEd,cfBot,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,cfTop,xTEd,cfBot,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  // Solid separation line between carriageways
+  s+=svgLine(0,medTop,SVG_W,medTop,'#fbbf24',2);
+  s+=svgLine(0,medBot,SVG_W,medBot,'#fbbf24',2);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,normalTop+i*LANE_H,SVG_W,normalTop+i*LANE_H,'white',1.2,'stroke-dasharray="18,10" opacity="0.6"');
+  s+=svgLine(0,normalTop,SVG_W,normalTop,'white',2.5);
+  s+=svgLine(0,cfBot,SVG_W,cfBot,'white',2.5);
+  // Flow arrows
+  s+=aFlow((xWS+xWE)/2,normalTop+(nLanes>1?(nLanes-0.5)*LANE_H:LANE_H/2),true);
+  s+=aFlow((xTEa+xTSd)/2,cfTop+cfH/2,false);
+  // Labels
+  s+=svgText((xWS+xWE)/2,normalTop+LANE_H/2+4,'WORK AREA','middle',7.5,'white',true);
+  s+=svgText((xTEa+xTSd)/2,cfTop+cfH/2+4,'CONTRAFLOW LANE','middle',7.5,'#93c5fd',true);
+  if(xTEa-xTSa>28) s+=svgText((xTSa+xTEa)/2,normalTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,normalTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // Min lane width note
+  s+=svgText(SVG_W-RM,cfBot+SH+14,'Min lane width 3.3m to remain open','end',7.5,'#dc2626',false);
+
+  // TC/PTL positions
+  s+=aCtrl(xTSa-10,cfBot+SH+6,tcMethod);
+  s+=aCtrl(xTEd+10,cfBot+SH+6,tcMethod);
+
+  // Signs
+  s+=aDiamond(xRWA1,SIGN_CY,['ROAD','WORK','AHEAD']);
+  s+=aStem(xRWA1,SIGN_CY+24,stemY);
+  if(vWork&&vWork<vPosted){
+    s+=aSpeed(xSpd1-sp*sc*0.4,SIGN_CY,vWork);
+    s+=aStem(xSpd1-sp*sc*0.4,SIGN_CY+18,stemY);
+  }
+  s+=aDiamond(xTSa,SIGN_CY,['MERGE'],'#2563eb','#1e3a8a');
+  s+=aStem(xTSa,SIGN_CY+24,stemY);
+  s+=aEndSign(xEND,SIGN_CY);
+  s+=aStem(xEND,SIGN_CY+24,stemY);
+
+  // Dimensions
+  s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
+  s+=aDim(xTSa,xTEa,DIM_Y1,mt+'m merge taper');
+  s+=aDim(xTEa,xTSd,DIM_Y2,workLen+'m contraflow zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m departure taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  // Speed banners + direction labels
+  s+=svgRect(0,normalTop-14,44,13,'#1a365d','rx="3" opacity="0.9"');
+  s+=svgText(22,normalTop-4,vPosted+' km/h','middle',7.5,'white',true);
+  s+=svgText(LM,normalTop-28,'→ Normal Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(LM,cfBot+6,'← Contraflow Direction','start',8,'#1d4ed8',false);
+  s+=svgText(SVG_W-RM,normalTop-28,'CONTRAFLOW — '+p.state+' (AGTTM / AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(SVG_W/2,SVG_H-8,'NOTE: Rigid separation required between opposing traffic flows — seek engineer approval','middle',7.5,'#dc2626',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmLaneNarrow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=18, narrowPx=LANE_H*0.38;
+  var SIGN_CY=52, ROAD_TOP=90;
+  var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+72, SVG_W=AVAIL+LM+RM;
+  var stemY=ROAD_TOP-SH;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xS1=X2(0), xSpd=X2(sp), xTS=X2(sp), xTE=X2(sp+mt);
+  var xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var s='';
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Narrowed zone (top of lane 1)
+  s+=svgRect(xTE,ROAD_TOP,xTSd-xTE,narrowPx,'url(#hCone)');
+  s+=svgRect(xTE,ROAD_TOP,xTSd-xTE,narrowPx,'#f97316','opacity="0.4"');
+  // Taper polygons
+  s+=svgPoly([[xTS,ROAD_TOP],[xTE,ROAD_TOP+narrowPx],[xTSd,ROAD_TOP+narrowPx],[xTEd,ROAD_TOP]],'#fed7aa','#f97316',1);
+  s+=aCones(xTS,ROAD_TOP,xTE,ROAD_TOP+narrowPx,Math.max(4,Math.round((xTE-xTS)/28)));
+  s+=aCones(xTSd,ROAD_TOP+narrowPx,xTEd,ROAD_TOP,Math.max(3,Math.round((xTEd-xTSd)/28)));
+  // Cones along narrowed section
+  var nCones=Math.max(3,Math.round((xTSd-xTE)/40));
+  for(var ci=0;ci<=nCones;ci++) s+=aCone(xTE+(ci/nCones)*(xTSd-xTE),ROAD_TOP+narrowPx*0.5,5);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow
+  for(var li=0;li<nLanes;li++) s+=aFlow((xWS+xWE)/2,ROAD_TOP+(li+0.5)*LANE_H,true);
+  // Labels
+  s+=svgText((xTE+xTSd)/2,ROAD_TOP+narrowPx/2+4,'Delineation devices','middle',7.5,'white',true);
+  s+=svgText((xTE+xTSd)/2,ROAD_TOP+narrowPx/2+14,'Min 3.3m lane width','middle',7,'#fca5a5',false);
+  if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,ROAD_TOP+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,ROAD_TOP+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+
+  // Signs
+  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
+  s+=aStem(xS1,SIGN_CY+24,stemY);
+  if(vWork&&vWork<vPosted){
+    s+=aSpeed((xS1+xTS)/2,SIGN_CY,vWork);
+    s+=aStem((xS1+xTS)/2,SIGN_CY+18,stemY);
+  } else {
+    s+=aDiamond((xS1+xTS)/2,SIGN_CY,['LANE','NARROW']);
+    s+=aStem((xS1+xTS)/2,SIGN_CY+24,stemY);
+  }
+  s+=aEndSign(xEND,SIGN_CY);
+  s+=aStem(xEND,SIGN_CY+24,stemY);
+
+  s+=aDim(xS1,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xTS,xTE,DIM_Y1,mt+'m taper');
+  s+=aDim(xTE,xTSd,DIM_Y2,workLen+'m narrowed zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
+  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-28,'LANE NARROWING — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmShoulder(p) {
+  var sp=p.sp, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=28;
+  var SIGN_CY=52, ROAD_TOP=90;
+  var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var DIM_Y1=ROAD_BOT+SH+24;
+  var SVG_H=ROAD_BOT+SH+60, SVG_W=AVAIL+LM+RM;
+  var stemY=ROAD_TOP-12;
+
+  var total=2*sp+workLen+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xS2=X(sp);
+  var xWS=X(2*sp), xWE=X(2*sp+workLen);
+  var xEND=X(2*sp+workLen+sp);
+
+  var s='';
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  // Shoulder (work area side — top shoulder)
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  // Bottom shoulder
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full road (all lanes open)
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Work area in shoulder
+  s+=svgRect(xWS,ROAD_TOP-SH,xWE-xWS,SH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP-SH,xWE-xWS,SH,'#ef4444','opacity="0.3"');
+  // Boundary at shoulder edge
+  s+=svgLine(xWS,ROAD_TOP-SH,xWS,ROAD_TOP,'#f97316',2);
+  s+=svgLine(xWE,ROAD_TOP-SH,xWE,ROAD_TOP,'#f97316',2);
+  s+=svgLine(xWS,ROAD_TOP,xWE,ROAD_TOP,'#f97316',2);
+  // Simple cone row at shoulder boundary
+  var nc=Math.max(3,Math.round((xWE-xWS)/30));
+  for(var ci=0;ci<=nc;ci++) s+=aCone(xWS+(ci/nc)*(xWE-xWS),ROAD_TOP,6);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'#fbbf24',2);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow arrows (all lanes open)
+  for(var li=0;li<nLanes;li++) s+=aFlow((xWS+xWE)/2,ROAD_TOP+(li+0.5)*LANE_H,true);
+  // Labels
+  s+=svgText((xWS+xWE)/2,ROAD_TOP-SH/2+4,'WORK AREA','middle',8,'white',true);
+  s+=svgText((xWS+xWE)/2,ROAD_TOP-SH/2+14,workLen+'m','middle',7,'#fca5a5',false);
+  s+=svgText(SVG_W/2,ROAD_TOP+ROAD_H/2+4,'Travel lanes remain open','middle',9,'white',false);
+  s+=svgText(10,ROAD_TOP-SH/2+4,'Shoulder','start',7.5,'#166534',false);
+
+  // Signs above road
+  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
+  s+=aStem(xS1,SIGN_CY+24,ROAD_TOP-SH);
+  if(vWork&&vWork<vPosted){
+    s+=aSpeed(xS2,SIGN_CY,vWork);
+    s+=aStem(xS2,SIGN_CY+18,ROAD_TOP-SH);
+  } else {
+    s+=aDiamond(xS2,SIGN_CY,['SHOULDER','WORKS']);
+    s+=aStem(xS2,SIGN_CY+24,ROAD_TOP-SH);
+  }
+  s+=aEndSign(xEND,SIGN_CY);
+  s+=aStem(xEND,SIGN_CY+24,ROAD_TOP-SH);
+
+  s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
+  s+=aDim(xS2,xWS,DIM_Y1,sp+'m');
+  s+=aDim(xWS,xWE,DIM_Y1+18,workLen+'m shoulder works');
+  s+=aDim(xWE,xEND,DIM_Y1,sp+'m');
+
+  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
+  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  s+=svgText(LM,ROAD_TOP-SH-18,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-18,'WORKS OFF ROADWAY — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
 }
 
 // ═══════════════ INIT ═══════════════════════════════════════════════════════════
