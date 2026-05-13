@@ -380,6 +380,22 @@
         Cat 3 — Freeway / Motorway<br><small style="font-weight:400">Controlled access, no signals</small>
       </label>
     </div>
+
+    <div class="section-label" style="margin-top:20px">Road Configuration</div>
+    <div class="radio-group" id="roadConfigGroup">
+      <label class="radio-btn active" id="rconf-undivided" onclick="selRoadConfig(this,'undivided')">
+        Single Carriageway<br><small style="font-weight:400">Undivided, 2-way traffic</small>
+      </label>
+      <label class="radio-btn" id="rconf-divided" onclick="selRoadConfig(this,'divided')">
+        Divided Road<br><small style="font-weight:400">Dual carriageway with median</small>
+      </label>
+      <label class="radio-btn" id="rconf-oneway" onclick="selRoadConfig(this,'oneway')">
+        One-way Road<br><small style="font-weight:400">Single direction only</small>
+      </label>
+      <label class="radio-btn" id="rconf-freeway" onclick="selRoadConfig(this,'freeway')">
+        Freeway / Motorway<br><small style="font-weight:400">Multi-lane, controlled access</small>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -451,37 +467,19 @@
     </div>
   </div>
 
-  <div class="form-row">
-    <div class="form-group">
-      <label>Type of Closure</label>
-      <select id="closureType">
-        <option value="shoulder" selected>Shoulder / Parking Lane Only</option>
-        <option value="lane">Lane Closure — merge to adjacent lane</option>
-        <option value="road">Road Closure — one lane two way</option>
-        <option value="mobile">Mobile — no fixed closure</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Road Environment</label>
-      <select id="roadEnv">
-        <option value="builtup" selected>Built-up Area (urban)</option>
-        <option value="open">Open Road (rural / highway)</option>
-      </select>
-    </div>
-  </div>
-
   <div class="section-label">Traffic Management Arrangement</div>
   <div class="form-group">
     <label>Type of Traffic Management <span class="unit-hint">(TM arrangement to be implemented)</span></label>
     <select id="tmpType" onchange="onTmpTypeChange(this.value)">
-      <option value="shoulder" selected>Works in Shoulder</option>
-      <option value="lane-closure">Lane Closure</option>
-      <option value="lane-narrow">Lane Narrowing</option>
+      <option value="shoulder">Works in Shoulder / Verge</option>
+      <option value="lane-closure">Lane Closure (Merge to Adjacent Lane)</option>
+      <option value="lane-narrow">Lane Narrowing (Reduced Width)</option>
       <option value="shuttleflow">Shuttleflow — One Lane Two-Way</option>
-      <option value="contraflow">Contraflow</option>
-      <option value="median">Works on Median</option>
-      <option value="footpath">Works on Footpath</option>
+      <option value="contraflow">Contraflow (Opposing Carriageway Used)</option>
+      <option value="median">Works on Median / Central Reserve</option>
+      <option value="footpath">Works on Footpath / Nature Strip</option>
       <option value="carpark">Car Park Occupation</option>
+      <option value="road-closure">Full Road Closure (Detour)</option>
     </select>
     <div class="hint">A dimensioned sample plan will be generated based on your inputs</div>
   </div>
@@ -914,10 +912,11 @@ SIGNS.ACT = SIGNS.DEFAULT;
 
 // ═══════════════ STATE ══════════════════════════════════════════════════════════
 
-let state   = null;
-let works   = 'short';
-let roadCat = 1;
-let qldMode = 'count';
+let state      = null;
+let works      = 'short';
+let roadCat    = 1;
+let qldMode    = 'count';
+let roadConfig = 'undivided';
 
 
 // ═══════════════ UI HELPERS ════════════════════════════════════════════════════
@@ -1003,6 +1002,43 @@ function selCat(btn, c) {
   roadCat = c;
   document.querySelectorAll('#roadCatGroup .radio-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+}
+
+function selRoadConfig(btn, cfg) {
+  roadConfig = cfg;
+  document.querySelectorAll('#roadConfigGroup .radio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateTmpOptions();
+}
+
+function updateTmpOptions() {
+  const allOpts = {
+    'shoulder':      'Works in Shoulder / Verge',
+    'lane-closure':  'Lane Closure (Merge to Adjacent Lane)',
+    'lane-narrow':   'Lane Narrowing (Reduced Width)',
+    'shuttleflow':   'Shuttleflow — One Lane Two-Way',
+    'contraflow':    'Contraflow (Opposing Carriageway Used)',
+    'median':        'Works on Median / Central Reserve',
+    'footpath':      'Works on Footpath / Nature Strip',
+    'carpark':       'Car Park Occupation',
+    'road-closure':  'Full Road Closure (Detour)',
+  };
+  // Which options are valid per road config
+  const validByConfig = {
+    undivided: ['shoulder','lane-closure','lane-narrow','shuttleflow','footpath','carpark','road-closure'],
+    divided:   ['shoulder','lane-closure','lane-narrow','contraflow','median'],
+    oneway:    ['shoulder','lane-closure','lane-narrow','footpath','carpark'],
+    freeway:   ['shoulder','lane-closure','contraflow','median'],
+  };
+  const valid = validByConfig[roadConfig] || Object.keys(allOpts);
+  const sel = document.getElementById('tmpType');
+  const cur = sel.value;
+  sel.innerHTML = valid.map(v =>
+    `<option value="${v}"${v===cur?' selected':''}>${allOpts[v]}</option>`
+  ).join('');
+  // If current selection no longer valid, pick first
+  if (!valid.includes(cur)) sel.value = valid[0];
+  onTmpTypeChange(sel.value);
 }
 
 function setQldTab(btn, mode) {
@@ -1595,8 +1631,14 @@ function calculate() {
   const vPosted = n('postedSpeed');
   const vWork   = n('workSpeed') || null;
   const W       = n('lateralShift') || n('laneWidth') || 3.5;
-  const closureT= v('closureType');
-  const env     = v('roadEnv');
+  // Derive road environment from speed (no separate input needed)
+  const env = vPosted > 60 ? 'open' : 'builtup';
+  // Derive closure type from TMP arrangement
+  const tmpTypeVal = v('tmpType');
+  const closureT = (works === 'mobile') ? 'mobile'
+    : ['shuttleflow','contraflow','road-closure'].includes(tmpTypeVal) ? 'road'
+    : ['lane-closure','lane-narrow'].includes(tmpTypeVal) ? 'lane'
+    : 'shoulder';
   const isMobile= closureT === 'mobile' || works === 'mobile';
 
   if (isNaN(vPosted)) { alert('Please enter the posted speed limit.'); return; }
@@ -1633,7 +1675,7 @@ function calculate() {
     state, tmpType: tmpT, vPosted, vWork, numLanes: parseInt(v('numLanes')),
     laneW: n('laneWidth') || 3.5, mt: taperResult.mt, ct: taperResult.ct,
     buf, sp: signResult.sp, D, Q, works, sgns: sgn(), workLen: workArea,
-    tcMethod: v('tcMethod') || 'tc',
+    tcMethod: v('tcMethod') || 'tc', roadConfig,
   });
 
   const nL = parseInt(v('numLanes')) || 1;
@@ -1657,7 +1699,7 @@ function calculate() {
   // Populate print-only job details card
   const worksLabel = works==='short'?'Short Term Works':works==='long'?'Long Term Works':'Mobile Works';
   const catLabel   = roadCat===1?'Cat 1 — Local / Council':roadCat===2?'Cat 2 — Arterial / State Road':'Cat 3 — Freeway / Motorway';
-  const envLabel   = v('roadEnv')==='builtup'?'Built-up (Urban)':'Open Road (Rural)';
+  const envLabel   = env==='builtup'?'Built-up (Urban)':'Open Road (Rural)';
   const tcLabel    = {tc:'Traffic Controller',ptl:'Portable Traffic Lights',boom:'Portable Boom Barrier'}[v('tcMethod')||'tc'] || 'Traffic Controller';
   document.getElementById('printJobContent').innerHTML = `
     <table class="rtable" style="font-size:.85rem;">
@@ -1669,7 +1711,7 @@ function calculate() {
         </tr>
         <tr>
           <td>Road Category</td><td style="font-weight:700">${catLabel}</td>
-          <td>Road Environment</td><td style="font-weight:700">${envLabel}</td>
+          <td>Road Configuration</td><td style="font-weight:700">${roadConfig === 'undivided' ? 'Single Carriageway (Undivided)' : roadConfig === 'divided' ? 'Divided Road (Dual Carriageway)' : roadConfig === 'oneway' ? 'One-way Road' : 'Freeway / Motorway'}</td>
         </tr>
         <tr>
           <td>Posted Speed</td><td style="font-weight:700">${vPosted} km/h</td>
@@ -1706,6 +1748,7 @@ const TMP_NAMES = {
   'shuttleflow':'Shuttleflow (One Lane Two-Way)', 'contraflow':'Contraflow',
   'shoulder':'Works in Shoulder',     'median':'Works on Median',
   'footpath':'Works on Footpath',     'carpark':'Car Park Occupation',
+  'road-closure':'Full Road Closure (Detour)',
 };
 
 // State-specific regulatory notes per TM type
@@ -2589,6 +2632,59 @@ function svgCarpark(p) {
   return wrapSVG(s, SVG_W, SVG_H);
 }
 
+// ── FULL ROAD CLOSURE ──────────────────────────────────────────────────────────
+
+function svgRoadClosure(p) {
+  var sp=p.sp, workLen=p.workLen, vPosted=p.vPosted, vWork=p.vWork;
+  var nL=Math.max(1,p.nLanes||1);
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=22;
+  var ROAD_TOP=90, roadH=(nL*2)*LANE_H, ROAD_BOT=ROAD_TOP+roadH;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var SVG_W=AVAIL+LM+RM, SVG_H=ROAD_BOT+100;
+
+  var total=sp+workLen+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xWS=X(sp), xWE=X(sp+workLen), xSE=X(sp+workLen+sp);
+  var midY=ROAD_TOP+roadH/2;
+  var s='';
+
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_TOP,SVG_W,roadH,'#546e7a');
+  s+=svgLine(0,midY,SVG_W,midY,'#fbbf24',2.5);
+  for(var i=1;i<nL*2;i++){
+    if(i!==nL) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.2,'stroke-dasharray="18,10" opacity="0.6"');
+  }
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,roadH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,roadH,'#ef4444','opacity="0.35"');
+  s+=svgLine(xWS,ROAD_TOP,xWS,ROAD_BOT,'#dc2626',3);
+  s+=svgLine(xWE,ROAD_TOP,xWE,ROAD_BOT,'#dc2626',3);
+  s+=aFlow((xS1+xWS)*0.55,ROAD_TOP+LANE_H/2,true);
+  s+=aFlow((xWE+xSE)*0.55,midY+LANE_H/2,false);
+  s+=svgText((xWS+xWE)/2,midY+4,'ROAD CLOSED — DETOUR REQUIRED','middle',9,'white',true);
+  if(xWE-xWS>80) s+=svgText((xWS+xWE)/2,midY+16,workLen+'m','middle',8,'#fca5a5',false);
+
+  s+=aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    {type:'red',  lines:['ROAD','CLOSED']},
+    {type:'warn', lines:['FOLLOW','DETOUR']}
+  ]);
+  s+=aMMS(xSE, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
+
+  s+=svgText(LM,ROAD_TOP-SH-14,'→ / ← Both directions — Detour required','start',9,'#dc2626',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-14,'FULL ROAD CLOSURE — '+(p.state||''),'end',8,'#546e7a',false);
+  s+=svgText(SVG_W/2,SVG_H-10,'NOTE: Full road closure requires an approved detour route and Traffic Guidance Scheme prepared by a competent person.','middle',7,'#4b5563',false);
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
 // ── LEGEND ─────────────────────────────────────────────────────────────────────
 
 function tmpLegend() {
@@ -2644,9 +2740,10 @@ function generateTMPDiagram(p) {
         svgContent = useAGTTM ? svgAgttmContraflow(params) : svgContraflow(params); break;
       case 'shoulder':
         svgContent = useAGTTM ? svgAgttmShoulder(params) : svgShoulder(params); break;
-      case 'median':    svgContent = svgMedian(params);   break;
-      case 'footpath':  svgContent = svgFootpath(params); break;
-      case 'carpark':   svgContent = svgCarpark(params);  break;
+      case 'median':      svgContent = svgMedian(params);        break;
+      case 'footpath':    svgContent = svgFootpath(params);       break;
+      case 'carpark':     svgContent = svgCarpark(params);        break;
+      case 'road-closure': svgContent = svgRoadClosure(params);   break;
       default:
         svgContent = useAGTTM ? svgAgttmLaneClosure(params) : svgLaneClosure(params);
     }
@@ -2698,7 +2795,7 @@ async function doShare() {
 // ═══════════════ AGTTM-STYLE DIAGRAMS (VIC / SA / TAS / NT / ACT) ═══════════════
 
 function onTmpTypeChange(val) {
-  const needsCtrl = ['shuttleflow','contraflow'].includes(val);
+  const needsCtrl = ['shuttleflow','contraflow','road-closure'].includes(val);
   document.getElementById('tcMethodGroup').style.display = needsCtrl ? 'block' : 'none';
 }
 
@@ -2868,16 +2965,32 @@ function aMMS(cx, cy, panels) {
   return s;
 }
 
+// Zone label band — plan view zone identifier strip
+function zoneLabel(x1, x2, y, label, col) {
+  var w = x2 - x1;
+  if (w < 4) return '';
+  var s = '<rect x="'+r(x1)+'" y="'+r(y)+'" width="'+r(w)+'" height="11" fill="'+col+'" opacity="0.82"/>';
+  s += '<rect x="'+r(x1)+'" y="'+r(y)+'" width="'+r(w)+'" height="11" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>';
+  if (w > 38) s += '<text x="'+r(x1+w/2)+'" y="'+r(y+8)+'" text-anchor="middle" font-size="5.5" font-weight="bold" fill="white">'+label+'</text>';
+  return s;
+}
+
 function svgAgttmLaneClosure(p) {
   var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
   var nL=Math.max(1,p.nLanes||1), vPosted=p.vPosted, vWork=p.vWork;
 
   var LM=50, RM=50, AVAIL=820;
   var LANE_H=34, SH=22;
+  var isUndivided = !p.roadConfig || p.roadConfig === 'undivided';
+  var isDivided   = p.roadConfig === 'divided';
+  var oppLanes    = isUndivided ? 1 : 0;
+  var medianH     = isDivided   ? 14 : 0;
+
   var ROAD_TOP=90, ROAD_H=nL*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
   var SIGN_CY=Math.round(ROAD_TOP-SH/2);
-  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44, DIM_Y3=ROAD_BOT+64;
-  var SVG_H=ROAD_BOT+90, SVG_W=AVAIL+LM+RM;
+  var EXTRA_H = oppLanes*LANE_H + medianH + (isUndivided||isDivided ? SH : 0);
+  var DIM_Y1=ROAD_BOT+EXTRA_H+14, DIM_Y2=ROAD_BOT+EXTRA_H+34, DIM_Y3=ROAD_BOT+EXTRA_H+54;
+  var SVG_H=DIM_Y3+40, SVG_W=AVAIL+LM+RM;
 
   var total=3*sp+mt+buf+workLen+buf+ct+sp;
   var sc=AVAIL/total;
@@ -2893,8 +3006,9 @@ function svgAgttmLaneClosure(p) {
   // Background and shoulders
   s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
   s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
-  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
-  // Full road
+  // Bottom shoulder — only if divided or no extra lanes
+  if (!isUndivided) s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full road (near direction)
   s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
   // Buffer zones (amber) in closed lane
   s+=svgRect(xTE,closedTop,xCS-xTE,LANE_H,'#fef3c7');
@@ -2954,6 +3068,35 @@ function svgAgttmLaneClosure(p) {
   s+=aDim(xWE,xCS,DIM_Y2,buf+'m buffer');
   s+=aDim(xCS,xCE,DIM_Y2,ct+'m closing taper');
   s+=aDim(xCE,xSE,DIM_Y1,sp+'m');
+
+  // Opposing lane / median below near carriageway
+  if (isDivided) {
+    s+=svgRect(0,ROAD_BOT,SVG_W,medianH,'#78909c');
+    s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'#fbbf24',2);
+    s+=svgLine(0,ROAD_BOT+medianH,SVG_W,ROAD_BOT+medianH,'#fbbf24',2);
+    s+=svgText(SVG_W/2,ROAD_BOT+medianH/2+3,'MEDIAN STRIP','middle',6,'white',false);
+    s+=svgRect(0,ROAD_BOT+medianH,SVG_W,SH,'#c8e6c9');
+  }
+  if (isUndivided) {
+    // Yellow centreline separates near from far traffic
+    s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'#fbbf24',2.5);
+    // Opposing direction lane (unaffected)
+    s+=svgRect(0,ROAD_BOT,SVG_W,LANE_H,'#546e7a');
+    s+=svgLine(0,ROAD_BOT+LANE_H,SVG_W,ROAD_BOT+LANE_H,'white',2.5);
+    s+=svgRect(0,ROAD_BOT+LANE_H,SVG_W,SH,'#c8e6c9');
+    s+=aFlow(SVG_W*0.4,ROAD_BOT+LANE_H/2,false);
+    s+=svgText(SVG_W-RM,ROAD_BOT+LANE_H/2+4,'← Opposing Direction (unaffected)','end',8,'white',false);
+  }
+
+  // Zone labels
+  var zY=DIM_Y3+18;
+  s+=zoneLabel(xS1,xTS,zY,'ADVANCE WARNING ZONE','#1d4ed8');
+  s+=zoneLabel(xTS,xTE,zY,'TRANSITION','#f97316');
+  s+=zoneLabel(xTE,xWS,zY,'BUFFER','#d97706');
+  s+=zoneLabel(xWS,xWE,zY,'WORK SPACE','#dc2626');
+  s+=zoneLabel(xWE,xCS,zY,'BUFFER','#d97706');
+  s+=zoneLabel(xCS,xCE,zY,'TERM.','#f97316');
+  s+=zoneLabel(xCE,xSE,zY,'TERMINATION ZONE','#16a34a');
 
   // Speed banners
   s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
