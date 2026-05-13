@@ -2481,21 +2481,26 @@ function svgFootpath(p) {
 // ── CAR PARK OCCUPATION diagram ────────────────────────────────────────────────
 
 function svgCarpark(p) {
-  // Single parking lane running adjacent to the travel lane(s)
-  // Works zone = closed section of that parking lane, delineated with cones
+  // Parking lane on near/signage side (top of plan view) — travel lanes below
   const { sp, workLen, nLanes } = p;
 
   const LM=50, RM=50, AVAIL=820;
-  const LANE_H=38, PARK_H=32, KERB_H=10, SH=16;
-  const SIGN_CY=52, ROAD_TOP=90;
-  const roadH = nLanes * LANE_H;
-  const KERB_TOP = ROAD_TOP + roadH;
-  const PARK_TOP = KERB_TOP + KERB_H;
-  const PARK_BOT = PARK_TOP + PARK_H;
-  const DIM_Y = PARK_BOT + 30;
-  const SVG_H = PARK_BOT + 80;
+  const LANE_H=38, PARK_H=32, KERB_H=8, MED_H=18, SH=22;
   const SVG_W = AVAIL + LM + RM;
-  const stemY = ROAD_TOP - SH;
+
+  // Near side (top): signs → shoulder → parking lane → kerb → median strip → travel lanes
+  const PARK_TOP   = 80;
+  const SIGN_CY    = Math.round(PARK_TOP - SH / 2);
+  const PARK_BOT   = PARK_TOP + PARK_H;
+  const KERB_TOP   = PARK_BOT;
+  const KERB_BOT   = KERB_TOP + KERB_H;
+  const MEDIAN_TOP = KERB_BOT;
+  const MEDIAN_BOT = MEDIAN_TOP + MED_H;
+  const ROAD_TOP   = MEDIAN_BOT;
+  const roadH      = nLanes * LANE_H;
+  const ROAD_BOT   = ROAD_TOP + roadH;
+  const DIM_Y      = ROAD_BOT + 30;
+  const SVG_H      = ROAD_BOT + 70;
 
   const total = sp + sp + workLen + sp;
   const sc = AVAIL / total;
@@ -2507,41 +2512,30 @@ function svgCarpark(p) {
   const xSE = X(2 * sp + workLen + sp);
 
   let s = '';
+  // Background
   s += svgRect(0, 0, SVG_W, SVG_H, '#d1fae5');
-  s += svgRect(0, ROAD_TOP - SH, SVG_W, SH, '#bbf7d0');
+  // Shoulder / sign strip above parking (near side)
+  s += svgRect(0, PARK_TOP - SH, SVG_W, SH, '#bbf7d0');
 
-  // Travel lane(s)
-  s += svgRect(0, ROAD_TOP, SVG_W, roadH, '#546e7a');
-  for (let i = 1; i < nLanes; i++) s += svgLine(0, ROAD_TOP + i*LANE_H, SVG_W, ROAD_TOP + i*LANE_H, 'white', 1.5, 'stroke-dasharray="18,10" opacity="0.7"');
-  s += svgLine(0, ROAD_TOP, SVG_W, ROAD_TOP, 'white', 2.5);
-  s += svgLine(0, KERB_TOP, SVG_W, KERB_TOP, '#f59e0b', 2);
-  s += flowArrow(SVG_W / 2, ROAD_TOP + roadH / 2, true);
-  s += svgText(SVG_W / 2, ROAD_TOP + roadH / 2 + 4, 'TRAVEL LANE' + (nLanes > 1 ? 'S' : '') + ' — OPEN', 'middle', 8, 'white', false);
-
-  // Kerb strip
-  s += svgRect(0, KERB_TOP, SVG_W, KERB_H, '#94a3b8');
-  s += svgText(SVG_W / 2, KERB_TOP + KERB_H / 2 + 3, 'KERB', 'middle', 6, '#1e293b', true);
-
-  // Parking lane — full width background
+  // Parking lane — full width background (near/signage side, above travel lanes)
   s += svgRect(0, PARK_TOP, SVG_W, PARK_H, '#e2e8f0');
-  // Bay markings (perpendicular to kerb)
   const bayW = 24;
   for (let bx = LM; bx < SVG_W - RM; bx += bayW) s += svgLine(bx, PARK_TOP, bx, PARK_BOT, '#9ca3af', 0.8);
 
   // Open parking labels
-  if (xWS > xS1 + 10) s += svgText((xS1 + xWS) / 2, PARK_TOP + PARK_H / 2 + 4, 'PARKING OPEN', 'middle', 7, '#374151', false);
-  if (xSE > xWE + 10) s += svgText((xWE + xSE) / 2, PARK_TOP + PARK_H / 2 + 4, 'PARKING OPEN', 'middle', 7, '#374151', false);
+  if (xWS > xS1 + 10) s += svgText((xS1 + xWS) / 2, PARK_TOP + PARK_H / 2 + 3, 'PARKING OPEN', 'middle', 7, '#374151', false);
+  if (xSE > xWE + 10) s += svgText((xWE + xSE) / 2, PARK_TOP + PARK_H / 2 + 3, 'PARKING OPEN', 'middle', 7, '#374151', false);
 
   // Works section of parking lane (closed)
   s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, 'url(#hWork)');
   s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, '#ef4444', 'opacity="0.28"');
-  s += svgText((xWS + xWE) / 2, PARK_TOP + PARK_H / 2 + 4, 'WORKS — NO STOPPING', 'middle', 7.5, '#7f1d1d', true);
+  s += svgText((xWS + xWE) / 2, PARK_TOP + PARK_H / 2 + 3, 'WORKS — NO STOPPING', 'middle', 7.5, '#7f1d1d', true);
 
-  // Cones along top and bottom of works section in parking lane
+  // Cones along kerb edge (bottom of parking lane) and outer edge (top of parking lane)
   const nC = Math.max(3, Math.round((xWE - xWS) / 28));
   for (let ci = 0; ci <= nC; ci++) {
     const cx = xWS + (ci / nC) * (xWE - xWS);
-    s += cone(cx, PARK_TOP, 5);
+    s += cone(cx, PARK_TOP + 2, 5);
     s += cone(cx, PARK_BOT - 2, 5);
   }
   s += svgLine(xWS, PARK_TOP, xWS, PARK_BOT, '#f97316', 2.5);
@@ -2550,20 +2544,46 @@ function svgCarpark(p) {
   // Parking lane boundary lines
   s += svgLine(0, PARK_TOP, SVG_W, PARK_TOP, '#6b7280', 1.5);
   s += svgLine(0, PARK_BOT, SVG_W, PARK_BOT, '#374151', 2);
-  s += svgText(8, PARK_TOP - 6, 'Parking Lane', 'start', 7.5, '#374151', false);
+  s += svgText(8, PARK_TOP - SH - 4, 'Parking Lane (near/signage side)', 'start', 7.5, '#374151', false);
 
-  // Signs above road
-  s += signBox(xS1, SIGN_CY, ['ROAD', 'WORK', 'AHEAD'], 'warn');
-  s += svgLine(xS1, SIGN_CY + 20, xS1, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
-  s += signBox(xS2, SIGN_CY, ['NO', 'STOPPING'], 'stop');
-  s += svgLine(xS2, SIGN_CY + 20, xS2, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
-  s += signBox(xSE, SIGN_CY, ['END', 'ROAD', 'WORK'], 'end');
-  s += svgLine(xSE, SIGN_CY + 20, xSE, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
+  // Kerb strip (between parking lane and median strip)
+  s += svgRect(0, KERB_TOP, SVG_W, KERB_H, '#94a3b8');
+  s += svgLine(0, KERB_TOP, SVG_W, KERB_TOP, '#475569', 1);
+  s += svgLine(0, KERB_BOT, SVG_W, KERB_BOT, '#475569', 1);
+  s += svgText(SVG_W / 2, KERB_TOP + KERB_H / 2 + 2, 'KERB', 'middle', 6, '#1e293b', true);
+
+  // Median strip (between kerb and travel lanes)
+  s += svgRect(0, MEDIAN_TOP, SVG_W, MED_H, '#86efac');
+  // Median hatch markings
+  for (let mx = LM; mx < SVG_W - RM; mx += 22) {
+    s += svgLine(mx, MEDIAN_TOP + 2, mx + 8, MEDIAN_BOT - 2, '#16a34a', 1, 'opacity="0.55"');
+  }
+  s += svgLine(0, MEDIAN_BOT, SVG_W, MEDIAN_BOT, '#f59e0b', 2);
+  s += svgText(SVG_W / 2, MEDIAN_TOP + MED_H / 2 + 2, 'MEDIAN STRIP', 'middle', 6.5, '#14532d', true);
+
+  // Travel lane(s) — below kerb (far side)
+  s += svgRect(0, ROAD_TOP, SVG_W, roadH, '#546e7a');
+  for (let i = 1; i < nLanes; i++) s += svgLine(0, ROAD_TOP + i*LANE_H, SVG_W, ROAD_TOP + i*LANE_H, 'white', 1.5, 'stroke-dasharray="18,10" opacity="0.7"');
+  s += svgLine(0, ROAD_TOP, SVG_W, ROAD_TOP, 'white', 2.5);
+  s += svgLine(0, ROAD_BOT, SVG_W, ROAD_BOT, 'white', 2);
+  s += flowArrow(SVG_W / 2, ROAD_TOP + roadH / 2, true);
+  s += svgText(SVG_W / 2, ROAD_TOP + roadH / 2 + 4, 'TRAVEL LANE' + (nLanes > 1 ? 'S' : '') + ' — OPEN', 'middle', 8, 'white', false);
+
+  // MMS signs in shoulder strip (no posts)
+  s += aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    {type:'warn', lines:['NO','STOPPING']}
+  ]);
+  s += aMMS(xS2, SIGN_CY, [{type:'warn', lines:['NO','STOPPING']}]);
+  s += aMMS(xSE, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   s += dimArr(xWS, DIM_Y + 10, xWE, workLen + ' m');
 
-  s += svgText(LM, ROAD_TOP - SH - 14, '→ Direction of Travel', 'start', 9, '#1a365d', true);
-  s += svgText(SVG_W - RM, ROAD_TOP - SH - 14, 'PARKING LANE WORKS', 'end', 8, '#546e7a', false);
+  s += svgText(LM, PARK_TOP - SH - 14, '→ Direction of Travel', 'start', 9, '#1a365d', true);
+  s += svgText(SVG_W - RM, PARK_TOP - SH - 14, 'PARKING LANE WORKS', 'end', 8, '#546e7a', false);
   s += svgText(5, SVG_H - 10, 'NOTE: Parking lane bays closed with cones/drums. Travel lanes remain fully open.', 'start', 7, '#4b5563', false);
 
   return wrapSVG(s, SVG_W, SVG_H);
@@ -2808,14 +2828,54 @@ function aFlow(cx, cy, rightDir) {
          '<line x1="'+r(cx-d*10)+'" y1="'+r(cy)+'" x2="'+r(cx+d*4)+'" y2="'+r(cy)+'" stroke="#60a5fa" stroke-width="2.5" opacity="0.85"/>';
 }
 
+// Multi Message Sign (MMS) — plan-view (bird's eye) representation for AGTTM
+// Shown as stacked rectangular panels in a dark frame, placed at road shoulder.
+// No posts/stems — signs sit at road edge level.
+// panels: [{type:'warn'|'speed'|'end'|'red', lines:[], spd:N}]
+function aMMS(cx, cy, panels) {
+  var PW = 30, PH = 11, GAP = 1.5, PAD = 3;
+  var nP = panels.length;
+  var innerH = nP * PH + Math.max(0, nP - 1) * GAP;
+  var frameW = PW + PAD * 2;
+  var frameH = innerH + PAD * 2;
+  var fx = cx - frameW / 2;
+  var fy = cy - frameH / 2;
+  var s = '';
+  // MMS cabinet frame (dark — represents the trailer/stand unit)
+  s += '<rect x="'+r(fx)+'" y="'+r(fy)+'" width="'+r(frameW)+'" height="'+r(frameH)+'" rx="2.5" fill="#374151" stroke="#111827" stroke-width="1.5"/>';
+  panels.forEach(function(p, i) {
+    var py = fy + PAD + i * (PH + GAP);
+    var px = fx + PAD;
+    if (p.type === 'speed') {
+      // White panel with red speed circle
+      s += '<rect x="'+r(px)+'" y="'+r(py)+'" width="'+r(PW)+'" height="'+r(PH)+'" fill="white"/>';
+      var rs = PH * 0.38;
+      s += '<circle cx="'+r(px+PW/2)+'" cy="'+r(py+PH/2)+'" r="'+r(rs+2.2)+'" fill="#dc2626"/>';
+      s += '<circle cx="'+r(px+PW/2)+'" cy="'+r(py+PH/2)+'" r="'+r(rs)+'" fill="white"/>';
+      var sfs = String(p.spd).length > 2 ? 4.5 : 5.8;
+      s += '<text x="'+r(px+PW/2)+'" y="'+r(py+PH/2+2.2)+'" text-anchor="middle" font-size="'+sfs+'" font-weight="900" fill="#111">'+p.spd+'</text>';
+    } else {
+      var bg = p.type === 'end' ? '#16a34a' : p.type === 'red' ? '#dc2626' : p.type === 'blue' ? '#1d4ed8' : '#f97316';
+      var fg = 'white';
+      s += '<rect x="'+r(px)+'" y="'+r(py)+'" width="'+r(PW)+'" height="'+r(PH)+'" fill="'+bg+'"/>';
+      var nL = (p.lines||[]).length;
+      var lh = nL > 0 ? (PH - 2) / nL : PH;
+      (p.lines||[]).forEach(function(l, li) {
+        s += '<text x="'+r(px+PW/2)+'" y="'+r(py + 1 + (li + 0.82) * lh)+'" text-anchor="middle" font-size="5" font-weight="bold" fill="'+fg+'">'+l+'</text>';
+      });
+    }
+  });
+  return s;
+}
+
 function svgAgttmLaneClosure(p) {
   var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
   var nL=Math.max(1,p.nLanes||1), vPosted=p.vPosted, vWork=p.vWork;
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=34, SH=18;
-  var SIGN_CY=52, STEM_BOT=76;
+  var LANE_H=34, SH=22;
   var ROAD_TOP=90, ROAD_H=nL*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44, DIM_Y3=ROAD_BOT+64;
   var SVG_H=ROAD_BOT+90, SVG_W=AVAIL+LM+RM;
 
@@ -2828,7 +2888,6 @@ function svgAgttmLaneClosure(p) {
   var xSE=X(3*sp+mt+buf+workLen+buf+ct+sp);
 
   var closedTop=ROAD_TOP, closedBot=ROAD_TOP+LANE_H, openTop=closedBot;
-  var stemY=ROAD_TOP-SH;
   var s='';
 
   // Background and shoulders
@@ -2869,24 +2928,21 @@ function svgAgttmLaneClosure(p) {
   // CLOSED label on approach closed lane
   s+=svgText((xTS/2+xTS/2+xS1/2),closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
 
-  // Signs
-  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
-  s+=aStem(xS1,SIGN_CY+24,stemY);
-  s+=aDiamond(xS2,SIGN_CY,['LANE','CLOSED','AHEAD']);
-  s+=aStem(xS2,SIGN_CY+24,stemY);
-  if(vWork&&vWork<vPosted){
-    s+=aSpeed(xS3,SIGN_CY,vWork);
-    s+=aStem(xS3,SIGN_CY+18,stemY);
-  } else {
-    s+=aDiamond(xS3,SIGN_CY,['KEEP','LEFT']);
-    s+=aStem(xS3,SIGN_CY+24,stemY);
+  // MMS signs — placed at road shoulder (plan view), no posts
+  var hasSpd = vWork && vWork < vPosted;
+  s+=aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    hasSpd ? {type:'speed', spd:vWork} : {type:'warn', lines:['LANE','CLOSED','AHEAD']}
+  ]);
+  if(hasSpd) {
+    s+=aMMS(xS2, SIGN_CY, [{type:'warn', lines:['LANE','CLOSED','AHEAD']}]);
   }
-  // MERGE sign at taper start
-  s+=aDiamond(xTS,SIGN_CY,['MERGE'],'#2563eb','#1e3a8a');
-  s+=aStem(xTS,SIGN_CY+24,stemY);
-  // END sign
-  s+=aEndSign(xSE,SIGN_CY);
-  s+=aStem(xSE,SIGN_CY+24,stemY);
+  s+=aMMS(xS3, SIGN_CY, [{type:'warn', lines:['KEEP','LEFT']}]);
+  s+=aMMS(xTS, SIGN_CY, [{type:'blue', lines:['MERGE']}]);
+  s+=aMMS(xSE, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   // Dimension lines
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
@@ -2917,13 +2973,13 @@ function svgAgttmShuttleflow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc';
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=18;
-  var SIGN_CY=52, ROAD_TOP=90;
+  var LANE_H=36, SH=22;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var rH=2*LANE_H;
   var ROAD_BOT=ROAD_TOP+rH;
   var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
   var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
-  var stemY=ROAD_TOP-SH;
 
   var total=sp+mt+workLen+ct+sp;
   var sc=AVAIL/total;
@@ -2975,20 +3031,20 @@ function svgAgttmShuttleflow(p) {
   var ctrlY=ROAD_BOT+SH+8;
   s+=aCtrl(xTCa,ctrlY,tcMethod);
   s+=aCtrl(xTCd,ctrlY,tcMethod);
-  // TC label sign: PREPARE TO STOP or STOP ON RED SIGNAL
-  var ctrlSign=(tcMethod==='tc')?['PREPARE','TO STOP']:['STOP ON','RED SIGNAL'];
-  s+=aDiamond(xRWA1+sp*sc*0.5,ROAD_BOT+SH+20,ctrlSign,'#dc2626','#7f1d1d');
 
-  // Signs above road
-  s+=aDiamond(xRWA1,SIGN_CY,['ROAD','WORK','AHEAD']);
-  s+=aStem(xRWA1,SIGN_CY+24,stemY);
-  if(vWork&&vWork<vPosted){
-    s+=aSpeed(xSpd1-sp*sc*0.45,SIGN_CY,vWork);
-    s+=aStem(xSpd1-sp*sc*0.45,SIGN_CY+18,stemY);
-  }
-  // END sign (departure side)
-  s+=aEndSign(xEND,SIGN_CY);
-  s+=aStem(xEND,SIGN_CY+24,stemY);
+  // MMS signs — shoulder level, no posts
+  var hasSpd2 = vWork && vWork < vPosted;
+  var ctrlPanelType = (tcMethod==='tc') ? 'red' : 'red';
+  var ctrlLines = (tcMethod==='tc') ? ['PREPARE','TO STOP'] : ['STOP ON','RED SIGNAL'];
+  s+=aMMS(xRWA1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    hasSpd2 ? {type:'speed', spd:vWork} : null,
+    {type:ctrlPanelType, lines:ctrlLines}
+  ].filter(Boolean));
+  s+=aMMS(xEND, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   // Dimension labels
   s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
@@ -3017,13 +3073,13 @@ function svgAgttmContraflow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc', nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=34, SH=18, medH=14;
-  var SIGN_CY=52, ROAD_TOP=90;
+  var LANE_H=34, SH=22, medH=14;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var normalH=nLanes*LANE_H, cfH=LANE_H;
   var ROAD_BOT=ROAD_TOP+normalH+medH+cfH;
   var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
   var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
-  var stemY=ROAD_TOP-SH;
 
   var total=sp+mt+workLen+ct+sp;
   var sc=AVAIL/total;
@@ -3090,17 +3146,17 @@ function svgAgttmContraflow(p) {
   s+=aCtrl(xTSa-10,cfBot+SH+6,tcMethod);
   s+=aCtrl(xTEd+10,cfBot+SH+6,tcMethod);
 
-  // Signs
-  s+=aDiamond(xRWA1,SIGN_CY,['ROAD','WORK','AHEAD']);
-  s+=aStem(xRWA1,SIGN_CY+24,stemY);
-  if(vWork&&vWork<vPosted){
-    s+=aSpeed(xSpd1-sp*sc*0.4,SIGN_CY,vWork);
-    s+=aStem(xSpd1-sp*sc*0.4,SIGN_CY+18,stemY);
-  }
-  s+=aDiamond(xTSa,SIGN_CY,['MERGE'],'#2563eb','#1e3a8a');
-  s+=aStem(xTSa,SIGN_CY+24,stemY);
-  s+=aEndSign(xEND,SIGN_CY);
-  s+=aStem(xEND,SIGN_CY+24,stemY);
+  // MMS signs — shoulder level, no posts
+  var hasSpdCF = vWork && vWork < vPosted;
+  s+=aMMS(xRWA1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    hasSpdCF ? {type:'speed', spd:vWork} : null
+  ].filter(Boolean));
+  s+=aMMS(xTSa, SIGN_CY, [{type:'blue', lines:['MERGE']}]);
+  s+=aMMS(xEND, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   // Dimensions
   s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
@@ -3125,12 +3181,12 @@ function svgAgttmLaneNarrow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=18, narrowPx=LANE_H*0.38;
-  var SIGN_CY=52, ROAD_TOP=90;
+  var LANE_H=36, SH=22, narrowPx=LANE_H*0.38;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
   var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
   var SVG_H=ROAD_BOT+72, SVG_W=AVAIL+LM+RM;
-  var stemY=ROAD_TOP-SH;
 
   var total=sp+mt+workLen+ct+sp;
   var sc=AVAIL/total;
@@ -3167,18 +3223,17 @@ function svgAgttmLaneNarrow(p) {
   if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,ROAD_TOP+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
   if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,ROAD_TOP+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
 
-  // Signs
-  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
-  s+=aStem(xS1,SIGN_CY+24,stemY);
-  if(vWork&&vWork<vPosted){
-    s+=aSpeed((xS1+xTS)/2,SIGN_CY,vWork);
-    s+=aStem((xS1+xTS)/2,SIGN_CY+18,stemY);
-  } else {
-    s+=aDiamond((xS1+xTS)/2,SIGN_CY,['LANE','NARROW']);
-    s+=aStem((xS1+xTS)/2,SIGN_CY+24,stemY);
-  }
-  s+=aEndSign(xEND,SIGN_CY);
-  s+=aStem(xEND,SIGN_CY+24,stemY);
+  // MMS signs — shoulder level, no posts
+  var hasSpdLN = vWork && vWork < vPosted;
+  s+=aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    hasSpdLN ? {type:'speed', spd:vWork} : null
+  ].filter(Boolean));
+  s+=aMMS((xS1+xTS)/2, SIGN_CY, [{type:'warn', lines:['LANE','NARROWS']}]);
+  s+=aMMS(xEND, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   s+=aDim(xS1,xTS,DIM_Y1,sp+'m');
   s+=aDim(xTS,xTE,DIM_Y1,mt+'m taper');
@@ -3199,12 +3254,12 @@ function svgAgttmShoulder(p) {
   var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=28;
-  var SIGN_CY=52, ROAD_TOP=90;
+  var LANE_H=36, SH=24;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
   var DIM_Y1=ROAD_BOT+SH+24;
   var SVG_H=ROAD_BOT+SH+60, SVG_W=AVAIL+LM+RM;
-  var stemY=ROAD_TOP-12;
 
   var total=2*sp+workLen+sp;
   var sc=AVAIL/total;
@@ -3243,28 +3298,25 @@ function svgAgttmShoulder(p) {
   s+=svgText(SVG_W/2,ROAD_TOP+ROAD_H/2+4,'Travel lanes remain open','middle',9,'white',false);
   s+=svgText(10,ROAD_TOP-SH/2+4,'Shoulder','start',7.5,'#166534',false);
 
-  // Signs above road
-  s+=aDiamond(xS1,SIGN_CY,['ROAD','WORK','AHEAD']);
-  s+=aStem(xS1,SIGN_CY+24,ROAD_TOP-SH);
-  if(vWork&&vWork<vPosted){
-    s+=aSpeed(xS2,SIGN_CY,vWork);
-    s+=aStem(xS2,SIGN_CY+18,ROAD_TOP-SH);
-  } else {
-    s+=aDiamond(xS2,SIGN_CY,['SHOULDER','WORKS']);
-    s+=aStem(xS2,SIGN_CY+24,ROAD_TOP-SH);
-  }
-  s+=aEndSign(xEND,SIGN_CY);
-  s+=aStem(xEND,SIGN_CY+24,ROAD_TOP-SH);
+  // MMS signs — at shoulder level, no posts
+  var hasSpdSH = vWork && vWork < vPosted;
+  s+=aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    hasSpdSH ? {type:'speed', spd:vWork} : null
+  ].filter(Boolean));
+  s+=aMMS(xS2, SIGN_CY, [{type:'warn', lines:['SHOULDER','WORKS']}]);
+  s+=aMMS(xEND, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
 
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
   s+=aDim(xS2,xWS,DIM_Y1,sp+'m');
   s+=aDim(xWS,xWE,DIM_Y1+18,workLen+'m shoulder works');
   s+=aDim(xWE,xEND,DIM_Y1,sp+'m');
 
-  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
-  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
-  s+=svgText(LM,ROAD_TOP-SH-18,'→ Direction of Travel','start',9,'#1a365d',true);
-  s+=svgText(SVG_W-RM,ROAD_TOP-SH-18,'WORKS OFF ROADWAY — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(LM,ROAD_TOP-SH-14,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-14,'WORKS OFF ROADWAY — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
 
   return wrapSVG(s,SVG_W,SVG_H);
 }
