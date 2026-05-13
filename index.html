@@ -25,10 +25,10 @@
     body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:var(--gray-bg); color:var(--text); min-height:100vh; }
 
     /* ── Header ── */
-    header { background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%); color:#fff; padding:20px 40px; box-shadow:0 2px 12px rgba(0,0,0,.25); }
+    header { background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%); color:#fff; padding:20px 40px; box-shadow:0 2px 12px rgba(0,0,0,.25); text-align:center; }
     header h1 { font-size:1.6rem; font-weight:800; letter-spacing:-.02em; }
     header p  { font-size:.83rem; opacity:.82; margin-top:4px; }
-    .header-badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .header-badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; justify-content:center; }
     .badge { background:rgba(255,255,255,.18); border-radius:20px; padding:3px 10px; font-size:.72rem; font-weight:600; }
 
     /* ── Layout ── */
@@ -232,8 +232,78 @@
       border-radius:4px; padding:2px 7px; font-size:.72rem; font-weight:700; margin:2px;
     }
 
+    /* ── Dark Theme ── */
+    body.dark {
+      --blue-dark: #93c5fd;
+      --blue:      #60a5fa;
+      --blue-light:#1e3a5f;
+      --gray-bg:   #0f172a;
+      --gray-1:    #1e293b;
+      --gray-2:    #334155;
+      --gray-3:    #94a3b8;
+      --text:      #e2e8f0;
+      --orange:    #fb923c;
+      --green:     #4ade80;
+      --red:       #f87171;
+    }
+    body.dark header { background:linear-gradient(135deg,#0a1628 0%,#1e3a5f 100%) !important; }
+    body.dark .card { background:#1e293b; }
+    body.dark input[type="number"],
+    body.dark select { background:#0f172a; color:#e2e8f0; border-color:#334155; }
+    body.dark select {
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    }
+    body.dark .formula-box { background:#0f172a; border-color:#334155; color:#94a3b8; }
+    body.dark .kv-row { border-color:#334155; }
+    body.dark .kv-row:nth-child(even) { background:#0f172a; }
+    body.dark .kv-list { border-color:#334155; }
+    body.dark .summary-tile { background:#1e293b; border-color:#334155; }
+    body.dark .diagram-scroll { background:#1e293b; }
+    body.dark footer { background:#1e293b; border-color:#334155; color:#64748b; }
+    body.dark .result-section { border-color:#334155; }
+    body.dark .result-section-header { background:#1e293b; color:#93c5fd; }
+    body.dark .result-section-header:hover { background:#334155; }
+    body.dark .sign-layout { border-color:#334155; }
+    body.dark .sign-row { border-color:#334155; }
+    body.dark .sign-row:nth-child(even) { background:#0f172a; }
+    body.dark .tabs .tab { background:#1e293b; border-color:#334155; color:#94a3b8; }
+    body.dark .tabs .tab.active { background:#2b6cb0; border-color:#2b6cb0; color:#fff; }
+    body.dark .radio-btn { background:#1e293b; border-color:#334155; color:#94a3b8; }
+    body.dark .sign-row.s-works    { background:#2a1f00; }
+    body.dark .sign-row.s-buffer   { background:#2d1818; }
+    body.dark .sign-row.s-taper    { background:#0f2318; }
+    body.dark .sign-row.s-sign-req { background:#2d2800; }
+    body.dark .sign-row.s-sign-spd { background:#2a2000; }
+    body.dark .sign-row.s-sign-warn{ background:#132038; }
+    body.dark .sign-row.s-end      { background:#0f2318; }
+    body.dark .box-warn  { background:#2d1515; border-left-color:#f87171; color:#fca5a5; }
+    body.dark .box-info  { background:#132038; border-left-color:#60a5fa; color:#93c5fd; }
+    body.dark .box-ok    { background:#0f2318; border-left-color:#4ade80; color:#86efac; }
+    body.dark .box-amber { background:#2a1f00; border-left-color:#fb923c; color:#fdba74; }
+    body.dark .divider   { border-color:#334155; }
+    body.dark .result-hero { background:linear-gradient(135deg,#0a1628,#1e3a5f) !important; }
+    body.dark #pdfBar,
+    body.dark #calcCard { background:#0f172a; }
+    body.dark .dim-badge { background:#1e3a8a; }
+    body.dark .section-label { color:#94a3b8; }
+    body.dark .hint { color:#64748b; }
+    body.dark .unit-hint { color:#64748b; }
+    body.dark .example { color:#60a5fa; }
+    body.dark #printJobCard { background:#1e293b; }
+
+    #darkToggle {
+      position:absolute; right:20px; top:50%; transform:translateY(-50%);
+      background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+      color:#fff; border-radius:20px; padding:5px 14px; font-size:.78rem;
+      font-weight:700; cursor:pointer; transition:background .15s;
+      white-space:nowrap;
+    }
+    #darkToggle:hover { background:rgba(255,255,255,.25); }
+    header { position:relative; }
+
     /* Mobile touch improvements */
     @media (max-width: 768px) {
+      #darkToggle { right: 10px; padding: 4px 10px; font-size: .72rem; }
       .container { padding: 0 12px; }
       header { padding: 16px 20px; }
       header h1 { font-size: 1.3rem; }
@@ -268,6 +338,7 @@
       body { background: white; font-size: 10pt; }
       header { background: #1a365d !important; padding: 10px 16px; }
       header h1 { font-size: 1.2rem; }
+      #darkToggle { display: none !important; }
 
       .container { max-width: 100%; padding: 0; margin: 0; }
 
@@ -322,6 +393,7 @@
 <body>
 
 <header>
+  <button id="darkToggle" onclick="toggleDark()" title="Toggle dark mode">&#9790; Dark</button>
   <h1>Traffic Management Calculator</h1>
   <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
   <div class="header-badges" id="headerBadges">
@@ -511,15 +583,17 @@
   <!-- VIC / SA / TAS / NT -->
   <div id="form-vic" class="hidden">
     <div class="formula-box">
-      <strong>Queue Formula (Table 4.3 &mdash; AS1742.3):</strong><br>
-      (Average vehicles &times; Ma) + (Oversized vehicles &times; Mo) = Estimated queue length (m)
+      <strong>Queue Formula (Table 4.3 &mdash; AGTTM / AS1742.3):</strong><br>
+      Q = (Average vehicles &times; Ma) + (Oversized vehicles &times; Mo) = Estimated queue length (m)<br>
+      Inputs must be a <strong>5-minute directional count</strong> taken at the works location.<br>
+      <span style="color:var(--gray-3);font-size:.78rem">If only hourly volume (VPH) is available: 5-min count &asymp; VPH &divide; 12 (one-way direction). Use actual counted data wherever possible.</span>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Average Vehicles <span class="unit-hint">(5-min count)</span></label>
+        <label>Average Vehicles <span class="unit-hint">(5-min count, one direction)</span></label>
         <input type="number" id="vic-avg" min="0" step="1" placeholder="e.g. 15">
-        <div class="hint">Cars, utes, vans, light vehicles</div>
-        <div class="example">Example: 15</div>
+        <div class="hint">Cars, utes, vans, light vehicles &mdash; count for 5 min in direction of travel</div>
+        <div class="example">VPH÷12 if no site count available. Example: 180 vph ÷ 12 = 15</div>
       </div>
       <div class="form-group">
         <label>Oversized / Heavy Vehicles <span class="unit-hint">(5-min count)</span></label>
@@ -916,6 +990,20 @@ let state   = null;
 let works   = 'short';
 let roadCat = 1;
 let qldMode = 'count';
+
+// ── Dark theme ────────────────────────────────────────────────────────────────
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('tmDark', isDark ? '1' : '0');
+  document.getElementById('darkToggle').innerHTML = isDark ? '&#9728; Light' : '&#9790; Dark';
+}
+(function(){
+  if (localStorage.getItem('tmDark') === '1') {
+    document.body.classList.add('dark');
+    const btn = document.getElementById('darkToggle');
+    if (btn) btn.innerHTML = '&#9728; Light';
+  }
+})();
 
 // ═══════════════ UI HELPERS ════════════════════════════════════════════════════
 
@@ -1827,26 +1915,52 @@ function cones(x1,y1,x2,y2,n=6,sz=6) {
   return s;
 }
 
-// Sign box above road
-function signBox(cx,cy,lines,type='warn') {
-  const C = {
-    warn:  {bg:'#fef9c3',border:'#d97706',txt:'#78350f'},
-    speed: {bg:'#fee2e2',border:'#dc2626',txt:'#7f1d1d'},
-    stop:  {bg:'#fee2e2',border:'#dc2626',txt:'#7f1d1d'},
-    end:   {bg:'#dcfce7',border:'#16a34a',txt:'#14532d'},
-    info:  {bg:'#dbeafe',border:'#2563eb',txt:'#1e3a8a'},
-  };
-  const c = C[type]||C.warn;
-  const lh=11, pad=5;
-  const maxW = Math.max(...lines.map(l=>l.length))*5.5+pad*2;
-  const h = lines.length*lh+pad*2;
-  const x = cx-maxW/2, y = cy-h/2;
-  let s = `<rect x="${r(x)}" y="${r(y)}" width="${r(maxW)}" height="${r(h)}" rx="3" fill="${c.bg}" stroke="${c.border}" stroke-width="1.5"/>`;
-  lines.forEach((l,i)=>{
-    s += svgText(cx, y+pad+lh*(i+0.8), l, 'middle', 8, c.txt, true);
-  });
-  // Stem
-  s += svgLine(cx, y+h, cx, cy+8, c.border, 1.5);
+// Sign box above road — draw proper diamond for warn/end, rectangle for others
+function signBox(cx, cy, lines, type='warn') {
+  let s = '';
+  if (type === 'warn') {
+    // Orange warning diamond (AS1742.3 style)
+    const s2 = 28;
+    const s2o = s2 + 3;
+    const ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+    const pts  = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+    s += '<polygon points="'+ptsO+'" fill="#92400e" stroke="none"/>';
+    s += '<polygon points="'+pts+'" fill="#f97316" stroke="none"/>';
+    const lh = 9, nL = lines.length, startY = cy - (nL-1)*lh/2;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(startY+i*lh+3)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white">'+l+'</text>'; });
+    s += svgLine(cx, cy+s2o, cx, cy+s2o+16, '#92400e', 2);
+  } else if (type === 'end') {
+    // Green diamond
+    const s2 = 28, s2o = s2+3;
+    const ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+    const pts  = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+    s += '<polygon points="'+ptsO+'" fill="#14532d" stroke="none"/>';
+    s += '<polygon points="'+pts+'" fill="#16a34a" stroke="none"/>';
+    const lh = 9, nL = lines.length, startY = cy - (nL-1)*lh/2;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(startY+i*lh+3)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white">'+l+'</text>'; });
+    s += svgLine(cx, cy+s2o, cx, cy+s2o+16, '#14532d', 2);
+  } else if (type === 'speed') {
+    // Red circle speed sign
+    s += '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="22" fill="#dc2626"/>';
+    s += '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white"/>';
+    const fs = lines[0] && lines[0].length > 2 ? 10 : 13;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(cy+(i-lines.length/2+0.7)*10)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+l+'</text>'; });
+    s += svgLine(cx, cy+22, cx, cy+38, '#dc2626', 2);
+  } else {
+    // Rectangular sign (stop/info)
+    const C = {
+      stop: {bg:'#dc2626',border:'#7f1d1d',txt:'white'},
+      info: {bg:'#2563eb',border:'#1e3a8a',txt:'white'},
+    };
+    const c = C[type] || {bg:'#f3f4f6',border:'#6b7280',txt:'#111'};
+    const lh=11, pad=6;
+    const maxW = Math.max(...lines.map(l=>l.length))*6+pad*2;
+    const h = lines.length*lh+pad*2;
+    const x = cx-maxW/2, y = cy-h/2;
+    s += '<rect x="'+r(x)+'" y="'+r(y)+'" width="'+r(maxW)+'" height="'+r(h)+'" rx="3" fill="'+c.bg+'" stroke="'+c.border+'" stroke-width="2"/>';
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(y+pad+lh*(i+0.8))+'" text-anchor="middle" font-size="8" font-weight="bold" fill="'+c.txt+'">'+l+'</text>'; });
+    s += svgLine(cx, y+h, cx, y+h+16, c.border, 2);
+  }
   return s;
 }
 
@@ -1856,11 +1970,13 @@ function controller(cx,cy) {
           ${svgText(cx,cy+3,'TC','middle',6,'white',true)}`;
 }
 
-// Speed circle sign
+// Speed circle sign — proper red-bordered Australian speed limit sign
 function speedSign(cx,cy,spd) {
-  return `<circle cx="${r(cx)}" cy="${r(cy-4)}" r="10" fill="white" stroke="#dc2626" stroke-width="2.5"/>
-          ${svgText(cx,cy-1,spd,'middle',8,'#dc2626',true)}
-          ${svgLine(cx,cy+6,cx,cy+14,'#475569',1.5)}`;
+  const fs = String(spd).length > 2 ? 9 : 12;
+  return `<circle cx="${r(cx)}" cy="${r(cy)}" r="20" fill="#dc2626"/>
+          <circle cx="${r(cx)}" cy="${r(cy)}" r="16" fill="white"/>
+          <text x="${r(cx)}" y="${r(cy+5)}" text-anchor="middle" font-size="${fs}" font-weight="900" fill="#111">${spd}</text>
+          ${svgLine(cx,cy+20,cx,cy+34,'#dc2626',2)}`;
 }
 
 // Arrow showing traffic direction
@@ -2450,53 +2566,92 @@ function svgFootpath(p) {
 // ── CAR PARK OCCUPATION diagram ────────────────────────────────────────────────
 
 function svgCarpark(p) {
-  const { LANE_H,SH,SVGW,xS1,xWS,xWE,xSE,sp,workLen,nLanes,sgns,vPosted } = p;
+  // Single parking lane running adjacent to the travel lane(s)
+  // Works zone = closed section of that parking lane, delineated with cones
+  const { sp, workLen, nLanes } = p;
 
-  const cpH=55, RTOP=70;
-  const roadH=nLanes*LANE_H;
-  const roadY=RTOP+cpH+16;
-  const SVGH=roadY+roadH+SH+100;
+  const LM=50, RM=50, AVAIL=820;
+  const LANE_H=38, PARK_H=32, KERB_H=10, SH=16;
+  const SIGN_CY=52, ROAD_TOP=90;
+  const roadH = nLanes * LANE_H;
+  const KERB_TOP = ROAD_TOP + roadH;
+  const PARK_TOP = KERB_TOP + KERB_H;
+  const PARK_BOT = PARK_TOP + PARK_H;
+  const DIM_Y = PARK_BOT + 30;
+  const SVG_H = PARK_BOT + 80;
+  const SVG_W = AVAIL + LM + RM;
+  const stemY = ROAD_TOP - SH;
+
+  const total = sp + sp + workLen + sp;
+  const sc = AVAIL / total;
+  function X(d) { return LM + d * sc; }
+  const xS1 = X(0);
+  const xS2 = X(sp);
+  const xWS = X(2 * sp);
+  const xWE = X(2 * sp + workLen);
+  const xSE = X(2 * sp + workLen + sp);
 
   let s = '';
-  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  s += svgRect(0, 0, SVG_W, SVG_H, '#d1fae5');
+  s += svgRect(0, ROAD_TOP - SH, SVG_W, SH, '#bbf7d0');
 
-  // Car park area
-  s += svgRect(0,RTOP,SVGW,cpH,'#e5e7eb');
-  // Car park bays (dotted lines)
-  for(let x2=50;x2<SVGW-20;x2+=30) s += svgLine(x2,RTOP,x2,RTOP+cpH,'#9ca3af',0.8);
-  s += svgLine(0,RTOP+cpH*0.55,SVGW,RTOP+cpH*0.55,'#9ca3af',1.5);
+  // Travel lane(s)
+  s += svgRect(0, ROAD_TOP, SVG_W, roadH, '#546e7a');
+  for (let i = 1; i < nLanes; i++) s += svgLine(0, ROAD_TOP + i*LANE_H, SVG_W, ROAD_TOP + i*LANE_H, 'white', 1.5, 'stroke-dasharray="18,10" opacity="0.7"');
+  s += svgLine(0, ROAD_TOP, SVG_W, ROAD_TOP, 'white', 2.5);
+  s += svgLine(0, KERB_TOP, SVG_W, KERB_TOP, '#f59e0b', 2);
+  s += flowArrow(SVG_W / 2, ROAD_TOP + roadH / 2, true);
+  s += svgText(SVG_W / 2, ROAD_TOP + roadH / 2 + 4, 'TRAVEL LANE' + (nLanes > 1 ? 'S' : '') + ' — OPEN', 'middle', 8, 'white', false);
 
-  // Kerb/nature strip
-  s += svgRect(0,RTOP+cpH,SVGW,16,'#a7f3d0');
-  s += svgRect(0,roadY+roadH,SVGW,SH,'#a7f3d0');
+  // Kerb strip
+  s += svgRect(0, KERB_TOP, SVG_W, KERB_H, '#94a3b8');
+  s += svgText(SVG_W / 2, KERB_TOP + KERB_H / 2 + 3, 'KERB', 'middle', 6, '#1e293b', true);
 
-  // Road
-  s += svgRect(0,roadY,SVGW,roadH,'#475569');
+  // Parking lane — full width background
+  s += svgRect(0, PARK_TOP, SVG_W, PARK_H, '#e2e8f0');
+  // Bay markings (perpendicular to kerb)
+  const bayW = 24;
+  for (let bx = LM; bx < SVG_W - RM; bx += bayW) s += svgLine(bx, PARK_TOP, bx, PARK_BOT, '#9ca3af', 0.8);
 
-  // Work zone in car park
-  s += svgRect(xWS,RTOP,xWE-xWS,cpH,'url(#hWork)');
-  s += svgRect(xWS,RTOP,xWE-xWS,cpH,'#ef4444','opacity="0.3"');
-  // Barricade
-  s += svgRect(xWS,RTOP+cpH,xWE-xWS,16,'#f97316','opacity="0.5"');
+  // Open parking labels
+  if (xWS > xS1 + 10) s += svgText((xS1 + xWS) / 2, PARK_TOP + PARK_H / 2 + 4, 'PARKING OPEN', 'middle', 7, '#374151', false);
+  if (xSE > xWE + 10) s += svgText((xWE + xSE) / 2, PARK_TOP + PARK_H / 2 + 4, 'PARKING OPEN', 'middle', 7, '#374151', false);
 
-  // Lane markings
-  for(let i=1;i<nLanes;i++) s += svgLine(0,roadY+i*LANE_H,SVGW,roadY+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
-  s += svgLine(0,roadY,SVGW,roadY,'white',2);
-  s += svgLine(0,roadY+roadH,SVGW,roadY+roadH,'white',2);
-  for(let i=0;i<nLanes;i++) s += flowArrow(SVGW/2,roadY+(i+0.5)*LANE_H,true);
+  // Works section of parking lane (closed)
+  s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, 'url(#hWork)');
+  s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, '#ef4444', 'opacity="0.28"');
+  s += svgText((xWS + xWE) / 2, PARK_TOP + PARK_H / 2 + 4, 'WORKS — NO STOPPING', 'middle', 7.5, '#7f1d1d', true);
 
-  s += svgText((xWS+xWE)/2,RTOP+cpH/2+4,'CAR PARK WORKS','middle',9,'#7f1d1d',true);
-  s += svgText((xWS+xWE)/2,RTOP+cpH/2+16,workLen+' m','middle',8,'#7f1d1d',false);
-  s += svgText(5,RTOP+cpH/3,'Car park bays','start',8,'#6b7280',false);
-  s += svgText(SVGW-5,roadY+roadH/2+4,'Carriageway (open)','end',8,'white',false);
+  // Cones along top and bottom of works section in parking lane
+  const nC = Math.max(3, Math.round((xWE - xWS) / 28));
+  for (let ci = 0; ci <= nC; ci++) {
+    const cx = xWS + (ci / nC) * (xWE - xWS);
+    s += cone(cx, PARK_TOP, 5);
+    s += cone(cx, PARK_BOT - 2, 5);
+  }
+  s += svgLine(xWS, PARK_TOP, xWS, PARK_BOT, '#f97316', 2.5);
+  s += svgLine(xWE, PARK_TOP, xWE, PARK_BOT, '#f97316', 2.5);
 
-  const signY = RTOP-44;
-  s += signBox(xS1,signY,[sgns.roadworkAhead.split('(')[0].trim()],'warn');
-  s += signBox((xWS+xWE)/2,signY,['CAR PARK','CLOSED'],'warn');
-  s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
-  s += dimArr(xWS,roadY+roadH+SH+30,xWE,workLen+' m (car park works)');
+  // Parking lane boundary lines
+  s += svgLine(0, PARK_TOP, SVG_W, PARK_TOP, '#6b7280', 1.5);
+  s += svgLine(0, PARK_BOT, SVG_W, PARK_BOT, '#374151', 2);
+  s += svgText(8, PARK_TOP - 6, 'Parking Lane', 'start', 7.5, '#374151', false);
 
-  return wrapSVG(s,SVGW,SVGH);
+  // Signs above road
+  s += signBox(xS1, SIGN_CY, ['ROAD', 'WORK', 'AHEAD'], 'warn');
+  s += svgLine(xS1, SIGN_CY + 20, xS1, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
+  s += signBox(xS2, SIGN_CY, ['NO', 'STOPPING'], 'stop');
+  s += svgLine(xS2, SIGN_CY + 20, xS2, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
+  s += signBox(xSE, SIGN_CY, ['END', 'ROAD', 'WORK'], 'end');
+  s += svgLine(xSE, SIGN_CY + 20, xSE, stemY, '#6b7280', 1.5, 'stroke-dasharray="4,3"');
+
+  s += dimArr(xWS, DIM_Y + 10, xWE, workLen + ' m');
+
+  s += svgText(LM, ROAD_TOP - SH - 14, '→ Direction of Travel', 'start', 9, '#1a365d', true);
+  s += svgText(SVG_W - RM, ROAD_TOP - SH - 14, 'PARKING LANE WORKS', 'end', 8, '#546e7a', false);
+  s += svgText(5, SVG_H - 10, 'NOTE: Parking lane bays closed with cones/drums. Travel lanes remain fully open.', 'start', 7, '#4b5563', false);
+
+  return wrapSVG(s, SVG_W, SVG_H);
 }
 
 // ── LEGEND ─────────────────────────────────────────────────────────────────────
@@ -2616,25 +2771,31 @@ function isAGTTM(st) {
   return ['VIC','SA','TAS','NT','ACT'].includes(st);
 }
 
-// Orange (or custom colour) warning diamond sign
+// Orange (or custom colour) warning diamond sign — proper AGTTM-style
 function aDiamond(cx, cy, lines, col, strokeCol) {
   col = col || '#f97316'; strokeCol = strokeCol || '#7c2d12';
-  var s2 = 24;
+  var s2 = 30;
   var pts = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
-  var out = '<polygon points="'+pts+'" fill="'+col+'" stroke="'+strokeCol+'" stroke-width="1.8"/>';
-  var lh = 8.5, nL = lines.length;
+  // Outer border ring
+  var s2o = s2+3;
+  var ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+  var out = '<polygon points="'+ptsO+'" fill="'+strokeCol+'" stroke="none"/>';
+  out += '<polygon points="'+pts+'" fill="'+col+'" stroke="none"/>';
+  var lh = 9.5, nL = lines.length;
   var startY = cy - (nL - 1) * lh / 2;
   lines.forEach(function(l, i) {
-    out += '<text x="'+r(cx)+'" y="'+r(startY + i*lh + 2.5)+'" text-anchor="middle" font-size="6.5" font-weight="bold" fill="white">'+l+'</text>';
+    out += '<text x="'+r(cx)+'" y="'+r(startY + i*lh + 3)+'" text-anchor="middle" font-size="8" font-weight="bold" fill="white" letter-spacing="0.3">'+l+'</text>';
   });
   return out;
 }
 
-// Red-bordered speed limit circle
+// Red-bordered speed limit circle — proper Australian speed sign
 function aSpeed(cx, cy, spd) {
-  var fs = (spd >= 100) ? 10 : 12;
-  return '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white" stroke="#dc2626" stroke-width="3.2"/>'+
-         '<text x="'+r(cx)+'" y="'+r(cy+4.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="bold" fill="#1f2937">'+spd+'</text>';
+  var fs = (spd >= 100) ? 11 : 13;
+  // White background circle, thick red border, black number
+  return '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="22" fill="#dc2626"/>'+
+         '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white"/>'+
+         '<text x="'+r(cx)+'" y="'+r(cy+5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+spd+'</text>';
 }
 
 // Green END ROAD WORK diamond
@@ -2642,9 +2803,9 @@ function aEndSign(cx, cy) {
   return aDiamond(cx, cy, ['END','ROAD','WORK'], '#16a34a', '#14532d');
 }
 
-// Sign post stem (dashed line from sign bottom to road edge)
+// Sign post stem — solid post line from sign bottom to road edge
 function aStem(cx, botY, roadY) {
-  return '<line x1="'+r(cx)+'" y1="'+r(botY)+'" x2="'+r(cx)+'" y2="'+r(roadY)+'" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="3,2"/>';
+  return '<line x1="'+r(cx)+'" y1="'+r(botY)+'" x2="'+r(cx)+'" y2="'+r(roadY)+'" stroke="#374151" stroke-width="2" stroke-dasharray="4,3"/>';
 }
 
 // Dimension label with tick marks between x1 and x2 at height y
@@ -2656,25 +2817,48 @@ function aDim(x1, x2, y, label) {
          '<text x="'+r(mx)+'" y="'+r(y-6)+'" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#1e3a8a">'+label+'</text>';
 }
 
-// Traffic Controller figure
+// Traffic Controller figure — detailed person with STOP/SLOW baton
 function aTC(cx, cy) {
-  return '<circle cx="'+r(cx)+'" cy="'+r(cy-18)+'" r="6" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>'+
-         '<line x1="'+r(cx)+'" y1="'+r(cy-12)+'" x2="'+r(cx)+'" y2="'+r(cy)+'" stroke="#1e3a8a" stroke-width="2.5"/>'+
-         '<line x1="'+r(cx-8)+'" y1="'+r(cy-7)+'" x2="'+r(cx+8)+'" y2="'+r(cy-7)+'" stroke="#1e3a8a" stroke-width="2"/>'+
-         '<line x1="'+r(cx)+'" y1="'+r(cy)+'" x2="'+r(cx-5)+'" y2="'+r(cy+12)+'" stroke="#1e3a8a" stroke-width="2"/>'+
-         '<line x1="'+r(cx)+'" y1="'+r(cy)+'" x2="'+r(cx+5)+'" y2="'+r(cy+12)+'" stroke="#1e3a8a" stroke-width="2"/>'+
-         '<text x="'+r(cx)+'" y="'+r(cy+24)+'" text-anchor="middle" font-size="7" font-weight="bold" fill="#1e3a8a">TC</text>';
+  // Hi-vis vest (orange torso)
+  var out = '';
+  // Head
+  out += '<circle cx="'+r(cx)+'" cy="'+r(cy-22)+'" r="7" fill="#fde68a" stroke="#92400e" stroke-width="1.2"/>';
+  // Torso (hi-vis orange)
+  out += '<rect x="'+r(cx-7)+'" y="'+r(cy-14)+'" width="14" height="16" rx="2" fill="#f97316" stroke="#c2410c" stroke-width="1"/>';
+  // Arms
+  out += '<line x1="'+r(cx-7)+'" y1="'+r(cy-10)+'" x2="'+r(cx-14)+'" y2="'+r(cy-4)+'" stroke="#92400e" stroke-width="2.5"/>'; // left arm
+  out += '<line x1="'+r(cx+7)+'" y1="'+r(cy-10)+'" x2="'+r(cx+16)+'" y2="'+r(cy-2)+'" stroke="#92400e" stroke-width="2.5"/>'; // right arm holding baton
+  // STOP baton (red circle on top)
+  out += '<circle cx="'+r(cx+18)+'" cy="'+r(cy-4)+'" r="8" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>';
+  out += '<text x="'+r(cx+18)+'" y="'+r(cy-2)+'" text-anchor="middle" font-size="5.5" font-weight="bold" fill="white">STOP</text>';
+  // Legs
+  out += '<line x1="'+r(cx-4)+'" y1="'+r(cy+2)+'" x2="'+r(cx-5)+'" y2="'+r(cy+14)+'" stroke="#1e3a8a" stroke-width="2.5"/>';
+  out += '<line x1="'+r(cx+4)+'" y1="'+r(cy+2)+'" x2="'+r(cx+5)+'" y2="'+r(cy+14)+'" stroke="#1e3a8a" stroke-width="2.5"/>';
+  out += '<text x="'+r(cx)+'" y="'+r(cy+26)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#1e3a8a">TC</text>';
+  return out;
 }
 
 // Portable Traffic Lights / Portable Boom symbol
 function aPTL(cx, cy, label) {
   label = label || 'PTL';
-  return '<rect x="'+r(cx-9)+'" y="'+r(cy-22)+'" width="18" height="30" rx="3" fill="#1f2937"/>'+
-         '<circle cx="'+r(cx)+'" cy="'+r(cy-14)+'" r="4.5" fill="#ef4444"/>'+
-         '<circle cx="'+r(cx)+'" cy="'+r(cy-3)+'" r="4.5" fill="#fbbf24" opacity="0.4"/>'+
-         '<circle cx="'+r(cx)+'" cy="'+r(cy+8)+'" r="4.5" fill="#22c55e" opacity="0.4"/>'+
-         '<line x1="'+r(cx)+'" y1="'+r(cy+8)+'" x2="'+r(cx)+'" y2="'+r(cy+20)+'" stroke="#475569" stroke-width="2"/>'+
-         '<text x="'+r(cx)+'" y="'+r(cy+30)+'" text-anchor="middle" font-size="7" font-weight="bold" fill="#1e3a8a">'+label+'</text>';
+  var isBoom = (label === 'BOOM');
+  var out = '';
+  // Post
+  out += '<line x1="'+r(cx)+'" y1="'+r(cy-26)+'" x2="'+r(cx)+'" y2="'+r(cy+16)+'" stroke="#374151" stroke-width="3"/>';
+  // Housing
+  out += '<rect x="'+r(cx-10)+'" y="'+r(cy-26)+'" width="20" height="34" rx="3" fill="#111827" stroke="#374151" stroke-width="1.5"/>';
+  if (isBoom) {
+    // Boom gate bar
+    out += '<rect x="'+r(cx-8)+'" y="'+r(cy-20)+'" width="28" height="5" rx="2" fill="#f97316" stroke="#c2410c" stroke-width="1"/>';
+    out += '<text x="'+r(cx)+'" y="'+r(cy+28)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#f97316">BOOM</text>';
+  } else {
+    // Traffic light lenses
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy-17)+'" r="5" fill="#ef4444"/>'; // red
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy-5)+'" r="5" fill="#9ca3af" opacity="0.4"/>'; // amber off
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy+7)+'" r="5" fill="#9ca3af" opacity="0.4"/>'; // green off
+    out += '<text x="'+r(cx)+'" y="'+r(cy+28)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#1e3a8a">PTL</text>';
+  }
+  return out;
 }
 
 // Control point symbol — TC figure or PTL/Boom based on tcMethod
