@@ -261,7 +261,7 @@
     .pdf-btn.share-btn { background:linear-gradient(135deg,#276749,#38a169); }
 
     @media print {
-      @page { size: A4 landscape; margin: 12mm 10mm; }
+      @page { size: A4 portrait; margin: 15mm 12mm; }
 
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
@@ -301,9 +301,9 @@
         page-break-before: always;
       }
 
-      /* Diagram SVG fills the page width */
+      /* Diagram SVG: width 100%, height auto so it scales proportionally */
       .diagram-scroll { overflow: visible; }
-      .diagram-scroll svg { width: 100% !important; max-width: 100%; }
+      .diagram-scroll svg { width: 100% !important; height: auto !important; max-width: 100%; }
 
       .calc-btn { display: none !important; }
 
@@ -805,11 +805,51 @@ const MO = {2:8,   5:20, 10:40, 15:60, 30:120};
 // Stopping Sight Distance (m) — Austroads Guide to Road Design Part 3 / AS1742.3
 const SSD_TBL = {30:30, 40:40, 50:65, 60:85, 70:110, 80:130, 90:160, 100:185, 110:220};
 
-// Minimum merge/approach taper length (m) — AS1742.3 / AGTTM / state guides
+// Minimum merge/approach taper length (m) — AS1742.3 (NSW/QLD/WA)
 const TAPER_MIN = {40:30, 50:45, 60:60, 70:80, 80:160, 90:200, 100:240, 110:280};
 
-// Longitudinal clearance (buffer) from end of taper to first work activity (m) — AS1742.3
+// Longitudinal clearance (buffer) — AS1742.3 (NSW/QLD/WA)
 const BUFFER_TBL = {40:10, 50:15, 60:20, 70:30, 80:50, 90:75, 100:100, 110:120};
+
+// ── AGTTM Table 5.7 — Recommended Taper Lengths (m) — VIC/SA/TAS/NT/ACT ───────
+// Columns: [maxSpeed, TC taper, Lateral-shift taper, Merge taper]
+// TC taper null = N/A for that speed range
+const AGTTM_T57 = [
+  [45,  15,   5,  15],
+  [55,  15,  15,  30],
+  [65,  30,  30,  60],
+  [75,  null, 70, 115],
+  [85,  null, 80, 130],
+  [95,  null, 90, 145],
+  [105, null,100, 160],
+  [999, null,110, 180],
+];
+
+// AGTTM Table 5.8 — Distance between tapers (m)
+function agttmBuf(spd) {
+  if (spd <= 45) return 10;
+  if (spd <= 55) return 25;
+  if (spd <= 65) return 70;
+  return Math.round(1.5 * spd);
+}
+
+function agttmRow(spd) {
+  return AGTTM_T57.find(r => spd <= r[0]) || AGTTM_T57[AGTTM_T57.length-1];
+}
+// Merge taper (Table 5.7 col 4)
+function agttmMergeTaper(spd) { return agttmRow(spd)[3]; }
+// Traffic control taper (Table 5.7 col 2); null = N/A for speeds > 65 km/h
+function agttmTCTaper(spd)    { return agttmRow(spd)[1]; }
+// Lateral-shift taper (Table 5.7 col 3)
+function agttmLSTaper(spd)    { return agttmRow(spd)[2]; }
+// Speed range label for display
+function agttmSpeedRange(spd) {
+  const r = agttmRow(spd);
+  const prev = AGTTM_T57[AGTTM_T57.indexOf(r)-1];
+  if (!prev) return '≤ 45 km/h';
+  if (r[0] === 999) return '≥ 106 km/h';
+  return `${prev[0]+1}–${r[0]} km/h`;
+}
 
 // Advance warning sign spacing (m) minimum — AS1742.3 Table 3.3 / AGTTM04 / state guides
 // Index 0=Cat1, 1=Cat2, 2=Cat3
@@ -1016,8 +1056,9 @@ function getSSD(spd) {
   return Math.round(SSD_TBL[lo] + t * (SSD_TBL[hi] - SSD_TBL[lo]));
 }
 
-// Buffer zone at given speed
+// Buffer zone at given speed — AGTTM states use Table 5.8, others use AS1742.3
 function getBuffer(spd) {
+  if (state && ['VIC','SA','TAS','NT','ACT'].includes(state)) return agttmBuf(spd);
   const s = stdSpeed(spd);
   return BUFFER_TBL[s] || 120;
 }
@@ -1267,58 +1308,85 @@ function eoqQLD() {
 // ═══════════════ TAPER LENGTHS ════════════════════════════════════════════════
 
 function calcTapers(vPosted, vWork, W, closureType) {
-  const vApp = vPosted; // approach speed (conservative: posted speed)
-  const vWZ  = vWork || vPosted;
+  const vApp = vPosted;
   const w    = W || 3.5;
-  const mt   = mergeTaper(vApp, w);
-  const ct   = Math.max(Math.ceil(mt / 3), 30);  // closing/departure taper
-  const tt   = Math.max(Math.ceil(mt / 3), 20);  // tangent/shift taper
+  const useAGTTM = ['VIC','SA','TAS','NT','ACT'].includes(state);
 
-  // Formula string
-  const fStr = vApp <= 70
-    ? `W × V² / 155 = ${w} × ${vApp}² / 155 = ${(w*vApp*vApp/155).toFixed(1)} m (formula)`
-    : `W × V = ${w} × ${vApp} = ${w*vApp} m (formula)`;
-  const minStr = `Minimum from AS1742.3: ${TAPER_MIN[stdSpeed(vApp)]} m`;
-
-  let html = '';
+  let mt, ct, tt, html = '';
 
   if (closureType === 'mobile') {
     html += `<div class="box box-info">Mobile works: no fixed taper required. Shadow vehicle arrangement applies (see Sign Layout section).</div>`;
     return { mt: 0, ct: 0, tt: 0, html };
   }
 
-  html += `<div class="kv-list">
-    ${kv('Approach speed used (posted speed)', vApp + ' km/h')}
-    ${kv('Lateral offset / shift (W)', w + ' m')}
-    ${kv('Taper formula', vApp <= 70 ? 'L = W × V² / 155 (speed ≤ 70 km/h)' : 'L = W × V (speed > 70 km/h)')}
-    ${kv('Formula result', fStr)}
-    ${kv('Minimum taper (AS1742.3)', minStr)}
-  </div>`;
+  if (useAGTTM) {
+    // ── AGTTM Table 5.7 ──────────────────────────────────────────────────
+    mt = agttmMergeTaper(vApp);
+    const tcRaw = agttmTCTaper(vApp);   // null = N/A for speeds > 65 km/h
+    ct = tcRaw !== null ? tcRaw : mt;   // use merge taper for SVG geometry only when TC N/A
+    tt = agttmLSTaper(vApp);
+    const range = agttmSpeedRange(vApp);
+    const buf   = agttmBuf(vApp);
 
-  html += `<div style="margin-top:16px">
-  <table class="rtable">
-    <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Merge / Approach Taper</strong></td><td>${mt} m</td><td>Traffic merging into adjacent lane — approach side</td></tr>
-      <tr><td>Closing / Departure Taper</td><td>${ct} m</td><td>Traffic returning to normal lanes — departure side</td></tr>
-      <tr><td>Tangent / Shift Taper</td><td>${tt} m</td><td>Lateral shift (road deviation) — both ends of shift</td></tr>
-    </tbody>
-  </table></div>`;
-
-  if (vWork && vWork < vPosted) {
-    const mtWZ = mergeTaper(vWork, w);
-    html += `<div class="box box-info mt12">
-      <strong>Speed Reduction Note:</strong> If a work zone speed of ${vWork} km/h is effectively in place
-      before the taper (with adequate advance warning distance), the merge taper can be calculated
-      at ${vWork} km/h: <strong>${mtWZ} m</strong>.
-      The conservative approach is to use the posted speed taper (${mt} m).
-      Confirm with your competent person.
+    html += `<div class="box box-info mb12">
+      <strong>AGTTM Table 5.7</strong> — Speed range: ${range}<br>
+      Taper lengths based on 3.5 m lane width (median speed of range).
     </div>`;
-  }
+    html += `<div class="kv-list">
+      ${kv('Speed range (Table 5.7)', range)}
+      ${kv('Merge taper (approach)', mt + ' m')}
+      ${kv('Traffic control taper (Table 5.7)', tcRaw !== null ? tcRaw + ' m' : 'N/A — not applicable above 65 km/h')}
+      ${kv('Lateral shift taper (Table 5.7)', tt + ' m')}
+      ${kv('Distance between tapers (Table 5.8)', buf + ' m' + (vApp > 65 ? ' (= 1.5 × ' + vApp + ' km/h)' : ''))}
+    </div>`;
+    html += `<div style="margin-top:16px">
+    <table class="rtable">
+      <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Merge Taper</strong></td><td>${mt} m</td><td>Approach side — traffic merges into adjacent lane</td></tr>
+        <tr><td>Traffic Control Taper</td><td>${tcRaw !== null ? tcRaw + ' m' : 'N/A'}</td><td>${tcRaw !== null ? 'At traffic controller / PTL / boom position' : 'Not applicable — TC taper cannot be used above 65 km/h'}</td></tr>
+        <tr><td>Lateral Shift Taper</td><td>${tt} m</td><td>Lateral deviation — both ends of shift</td></tr>
+        <tr><td>Distance Between Tapers (buffer)</td><td>${buf} m</td><td>Separation between successive tapers (Table 5.8)</td></tr>
+      </tbody>
+    </table></div>`;
+    if (tcRaw === null) {
+      html += `<div class="box box-warn mt12"><strong>Traffic Control Taper N/A:</strong> At speeds above 65 km/h, traffic control tapers are not applicable per AGTTM Table 5.7. Use the merge taper (${mt} m) for the approach taper. Confirm arrangements with a competent person.</div>`;
+    }
+    html += `<p class="ref-note mt12">Reference: AGTTM04-21 Tables 5.7 &amp; 5.8 — ${STATE_INFO[state]?.name}. Verify against current edition.</p>`;
 
-  const ref = {NSW:'AGTTM04-21 cl.3.3 / AS1742.3 s.8', QLD:'QGTTM04 / AS1742.3 s.8',
-               WA:'WA Code of Practice / AS1742.3 s.8'};
-  html += `<p class="ref-note">Reference: ${ref[state] || 'AS1742.3-2019 Section 8'}. Formula per AS1742.3 cl.8.3. Minimum lengths per Table 8.2 (approximate values — verify against current edition).</p>`;
+  } else {
+    // ── AS1742.3 formula (NSW / QLD / WA) ────────────────────────────────
+    mt = mergeTaper(vApp, w);
+    ct = Math.max(Math.ceil(mt / 3), 30);
+    tt = Math.max(Math.ceil(mt / 3), 20);
+    const fStr   = vApp <= 70
+      ? `W × V² / 155 = ${w} × ${vApp}² / 155 = ${(w*vApp*vApp/155).toFixed(1)} m`
+      : `W × V = ${w} × ${vApp} = ${w*vApp} m`;
+    const minStr = `Minimum from AS1742.3: ${TAPER_MIN[stdSpeed(vApp)]} m`;
+
+    html += `<div class="kv-list">
+      ${kv('Approach speed (posted)', vApp + ' km/h')}
+      ${kv('Lateral offset / shift (W)', w + ' m')}
+      ${kv('Formula', vApp <= 70 ? 'L = W × V² / 155 (speed ≤ 70 km/h)' : 'L = W × V (speed > 70 km/h)')}
+      ${kv('Formula result', fStr)}
+      ${kv('Minimum taper (AS1742.3)', minStr)}
+    </div>`;
+    html += `<div style="margin-top:16px">
+    <table class="rtable">
+      <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Merge / Approach Taper</strong></td><td>${mt} m</td><td>Traffic merging into adjacent lane — approach side</td></tr>
+        <tr><td>Closing / Departure Taper</td><td>${ct} m</td><td>Traffic returning to normal lanes — departure side</td></tr>
+        <tr><td>Tangent / Shift Taper</td><td>${tt} m</td><td>Lateral shift (road deviation) — both ends of shift</td></tr>
+      </tbody>
+    </table></div>`;
+    if (vWork && vWork < vPosted) {
+      const mtWZ = mergeTaper(vWork, w);
+      html += `<div class="box box-info mt12"><strong>Speed Reduction Note:</strong> Taper may be calculated at work zone speed ${vWork} km/h (${mtWZ} m) if speed reduction is established before the taper. Conservative approach uses posted speed (${mt} m). Confirm with competent person.</div>`;
+    }
+    const ref = {NSW:'AGTTM04-21 / AS1742.3 s.8', QLD:'QGTTM04 / AS1742.3 s.8', WA:'WA Code of Practice / AS1742.3 s.8'};
+    html += `<p class="ref-note mt12">Reference: ${ref[state] || 'AS1742.3-2019 Section 8'}.</p>`;
+  }
 
   return { mt, ct, tt, html };
 }
