@@ -838,11 +838,8 @@ function agttmRow(spd) {
 }
 // Merge taper (Table 5.7 col 4)
 function agttmMergeTaper(spd) { return agttmRow(spd)[3]; }
-// Traffic control taper (Table 5.7 col 2); falls back to merge taper when N/A (>65 km/h)
-function agttmTCTaper(spd)    {
-  const tc = agttmRow(spd)[1];
-  return tc !== null ? tc : agttmMergeTaper(spd);
-}
+// Traffic control taper (Table 5.7 col 2); null = N/A for speeds > 65 km/h
+function agttmTCTaper(spd)    { return agttmRow(spd)[1]; }
 // Lateral-shift taper (Table 5.7 col 3)
 function agttmLSTaper(spd)    { return agttmRow(spd)[2]; }
 // Speed range label for display
@@ -1325,13 +1322,11 @@ function calcTapers(vPosted, vWork, W, closureType) {
   if (useAGTTM) {
     // ── AGTTM Table 5.7 ──────────────────────────────────────────────────
     mt = agttmMergeTaper(vApp);
-    ct = agttmTCTaper(vApp);
+    const tcRaw = agttmTCTaper(vApp);   // null = N/A for speeds > 65 km/h
+    ct = tcRaw !== null ? tcRaw : mt;   // use merge taper for SVG geometry only when TC N/A
     tt = agttmLSTaper(vApp);
     const range = agttmSpeedRange(vApp);
     const buf   = agttmBuf(vApp);
-    const tcNote = agttmRow(vApp)[1] === null
-      ? `N/A for this speed range — merge taper (${mt} m) used at control point`
-      : `${ct} m`;
 
     html += `<div class="box box-info mb12">
       <strong>AGTTM Table 5.7</strong> — Speed range: ${range}<br>
@@ -1339,8 +1334,8 @@ function calcTapers(vPosted, vWork, W, closureType) {
     </div>`;
     html += `<div class="kv-list">
       ${kv('Speed range (Table 5.7)', range)}
-      ${kv('Merge taper (approach — Table 5.7)', mt + ' m')}
-      ${kv('Traffic control taper (at TC/PTL/Boom — Table 5.7)', tcNote)}
+      ${kv('Merge taper (approach)', mt + ' m')}
+      ${kv('Traffic control taper (Table 5.7)', tcRaw !== null ? tcRaw + ' m' : 'N/A — not applicable above 65 km/h')}
       ${kv('Lateral shift taper (Table 5.7)', tt + ' m')}
       ${kv('Distance between tapers (Table 5.8)', buf + ' m' + (vApp > 65 ? ' (= 1.5 × ' + vApp + ' km/h)' : ''))}
     </div>`;
@@ -1349,12 +1344,15 @@ function calcTapers(vPosted, vWork, W, closureType) {
       <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
       <tbody>
         <tr><td><strong>Merge Taper</strong></td><td>${mt} m</td><td>Approach side — traffic merges into adjacent lane</td></tr>
-        <tr><td>Traffic Control Taper</td><td>${agttmRow(vApp)[1] !== null ? ct+' m' : 'N/A'}</td><td>At traffic controller / PTL / boom position</td></tr>
+        <tr><td>Traffic Control Taper</td><td>${tcRaw !== null ? tcRaw + ' m' : 'N/A'}</td><td>${tcRaw !== null ? 'At traffic controller / PTL / boom position' : 'Not applicable — TC taper cannot be used above 65 km/h'}</td></tr>
         <tr><td>Lateral Shift Taper</td><td>${tt} m</td><td>Lateral deviation — both ends of shift</td></tr>
         <tr><td>Distance Between Tapers (buffer)</td><td>${buf} m</td><td>Separation between successive tapers (Table 5.8)</td></tr>
       </tbody>
     </table></div>`;
-    html += `<p class="ref-note mt12">Reference: AGTTM04-21 Tables 5.7 &amp; 5.8 — ${STATE_INFO[state]?.name}. * TC taper N/A at &gt;65 km/h; merge taper used at control point for high-speed roads. Verify with competent person.</p>`;
+    if (tcRaw === null) {
+      html += `<div class="box box-warn mt12"><strong>Traffic Control Taper N/A:</strong> At speeds above 65 km/h, traffic control tapers are not applicable per AGTTM Table 5.7. Use the merge taper (${mt} m) for the approach taper. Confirm arrangements with a competent person.</div>`;
+    }
+    html += `<p class="ref-note mt12">Reference: AGTTM04-21 Tables 5.7 &amp; 5.8 — ${STATE_INFO[state]?.name}. Verify against current edition.</p>`;
 
   } else {
     // ── AS1742.3 formula (NSW / QLD / WA) ────────────────────────────────
