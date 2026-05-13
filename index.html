@@ -3052,13 +3052,13 @@ function svgAgttmLaneClosure(p) {
   var DIM_Y1=ROAD_BOT+EXTRA_H+14, DIM_Y2=ROAD_BOT+EXTRA_H+34, DIM_Y3=ROAD_BOT+EXTRA_H+54;
   var SVG_H=DIM_Y3+40, SVG_W=AVAIL+LM+RM;
 
-  var total=3*sp+mt+buf+workLen+buf+ct+sp;
+  var total=4*sp+mt+buf+workLen+buf+ct+sp;
   var sc=AVAIL/total;
   function X(d){return LM+d*sc;}
-  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xTS=X(3*sp);
-  var xTE=X(3*sp+mt), xWS=X(3*sp+mt+buf), xWE=X(3*sp+mt+buf+workLen);
-  var xCS=X(3*sp+mt+buf+workLen+buf), xCE=X(3*sp+mt+buf+workLen+buf+ct);
-  var xSE=X(3*sp+mt+buf+workLen+buf+ct+sp);
+  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xS4=X(3*sp), xTS=X(4*sp);
+  var xTE=X(4*sp+mt), xWS=X(4*sp+mt+buf), xWE=X(4*sp+mt+buf+workLen);
+  var xCS=X(4*sp+mt+buf+workLen+buf), xCE=X(4*sp+mt+buf+workLen+buf+ct);
+  var xSE=X(4*sp+mt+buf+workLen+buf+ct+sp);
 
   var closedTop=ROAD_TOP, closedBot=ROAD_TOP+LANE_H, openTop=closedBot;
   var s='';
@@ -3100,7 +3100,7 @@ function svgAgttmLaneClosure(p) {
   if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,closedTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
   if(xCE-xCS>18) s+=svgText((xCS+xCE)/2,closedTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
   // CLOSED label on approach closed lane
-  s+=svgText((xTS/2+xTS/2+xS1/2),closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
+  s+=svgText((xS1+xTS)/2,closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
 
   // ── AGTTM Sign Sequence — Lane Closure ──────────────────────────────────────
   // Speed signs positioned closest to traffic (SNEAR = bottom of shoulder).
@@ -3121,12 +3121,12 @@ function svgAgttmLaneClosure(p) {
     s+=aWarnSign(xS2, SMID, ['LANE','CLOSED','AHEAD']);
   }
 
-  // S3 (45m before taper): Prepare to Stop + Traffic Controller Ahead
+  // S3 (90m before taper): Prepare to Stop + Traffic Controller Ahead
   s+=aRectSign(xS3, SNEAR, ['PREPARE','TO STOP'], '#dc2626','white');
   s+=aWarnSign(xS3, SFAR, ['TRAFFIC','CONTROLLER']);
 
-  // At taper start: Lane Status / Merge sign
-  s+=aRectSign(xTS, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
+  // S4 (45m before taper): Lane Status / Merge — own sign station per AGTTM
+  s+=aRectSign(xS4, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
 
   // 3× LSM signs evenly spaced within taper
   if (xTE-xTS > 10) {
@@ -3141,10 +3141,11 @@ function svgAgttmLaneClosure(p) {
   s+=aRectSign(xSE, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
   s+=aSpdSign(xSE, SNEAR, vPosted);  // release speed — nearest to traffic
 
-  // Dimension lines
+  // Dimension lines — 4 advance warning stations each at sp intervals
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
   s+=aDim(xS2,xS3,DIM_Y1,sp+'m');
-  s+=aDim(xS3,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xS3,xS4,DIM_Y1,sp+'m');
+  s+=aDim(xS4,xTS,DIM_Y1,sp+'m');
   s+=aDim(xTS,xTE,DIM_Y2,mt+'m merge taper');
   s+=aDim(xTE,xWS,DIM_Y2,buf+'m buffer');
   s+=aDim(xWS,xWE,DIM_Y3,workLen+'m work area');
