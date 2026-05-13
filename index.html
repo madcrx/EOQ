@@ -2485,18 +2485,22 @@ function svgCarpark(p) {
   const { sp, workLen, nLanes } = p;
 
   const LM=50, RM=50, AVAIL=820;
-  const LANE_H=38, PARK_H=32, KERB_H=10, SH=22;
+  const LANE_H=38, PARK_H=32, KERB_H=8, MED_H=18, SH=22;
   const SVG_W = AVAIL + LM + RM;
 
-  // Near side (top): signs → shoulder strip → parking lane → kerb → travel lanes
-  const PARK_TOP = 80;
-  const SIGN_CY  = Math.round(PARK_TOP - SH / 2);   // signs centred in shoulder above parking
-  const PARK_BOT = PARK_TOP + PARK_H;
-  const ROAD_TOP = PARK_BOT + KERB_H;               // travel lanes start here
-  const roadH    = nLanes * LANE_H;
-  const ROAD_BOT = ROAD_TOP + roadH;
-  const DIM_Y    = ROAD_BOT + 30;
-  const SVG_H    = ROAD_BOT + 70;
+  // Near side (top): signs → shoulder → parking lane → kerb → median strip → travel lanes
+  const PARK_TOP   = 80;
+  const SIGN_CY    = Math.round(PARK_TOP - SH / 2);
+  const PARK_BOT   = PARK_TOP + PARK_H;
+  const KERB_TOP   = PARK_BOT;
+  const KERB_BOT   = KERB_TOP + KERB_H;
+  const MEDIAN_TOP = KERB_BOT;
+  const MEDIAN_BOT = MEDIAN_TOP + MED_H;
+  const ROAD_TOP   = MEDIAN_BOT;
+  const roadH      = nLanes * LANE_H;
+  const ROAD_BOT   = ROAD_TOP + roadH;
+  const DIM_Y      = ROAD_BOT + 30;
+  const SVG_H      = ROAD_BOT + 70;
 
   const total = sp + sp + workLen + sp;
   const sc = AVAIL / total;
@@ -2542,9 +2546,20 @@ function svgCarpark(p) {
   s += svgLine(0, PARK_BOT, SVG_W, PARK_BOT, '#374151', 2);
   s += svgText(8, PARK_TOP - SH - 4, 'Parking Lane (near/signage side)', 'start', 7.5, '#374151', false);
 
-  // Kerb strip (between parking lane and travel lanes)
-  s += svgRect(0, PARK_BOT, SVG_W, KERB_H, '#94a3b8');
-  s += svgText(SVG_W / 2, PARK_BOT + KERB_H / 2 + 2, 'KERB', 'middle', 6, '#1e293b', true);
+  // Kerb strip (between parking lane and median strip)
+  s += svgRect(0, KERB_TOP, SVG_W, KERB_H, '#94a3b8');
+  s += svgLine(0, KERB_TOP, SVG_W, KERB_TOP, '#475569', 1);
+  s += svgLine(0, KERB_BOT, SVG_W, KERB_BOT, '#475569', 1);
+  s += svgText(SVG_W / 2, KERB_TOP + KERB_H / 2 + 2, 'KERB', 'middle', 6, '#1e293b', true);
+
+  // Median strip (between kerb and travel lanes)
+  s += svgRect(0, MEDIAN_TOP, SVG_W, MED_H, '#86efac');
+  // Median hatch markings
+  for (let mx = LM; mx < SVG_W - RM; mx += 22) {
+    s += svgLine(mx, MEDIAN_TOP + 2, mx + 8, MEDIAN_BOT - 2, '#16a34a', 1, 'opacity="0.55"');
+  }
+  s += svgLine(0, MEDIAN_BOT, SVG_W, MEDIAN_BOT, '#f59e0b', 2);
+  s += svgText(SVG_W / 2, MEDIAN_TOP + MED_H / 2 + 2, 'MEDIAN STRIP', 'middle', 6.5, '#14532d', true);
 
   // Travel lane(s) — below kerb (far side)
   s += svgRect(0, ROAD_TOP, SVG_W, roadH, '#546e7a');
