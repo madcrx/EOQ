@@ -261,18 +261,61 @@
     .pdf-btn.share-btn { background:linear-gradient(135deg,#276749,#38a169); }
 
     @media print {
-      body { background: white; font-size: 11pt; }
-      header { background: #1a365d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px 20px; }
-      .container { max-width: 100%; padding: 0 10px; }
-      .card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 12px; padding: 14px; }
-      #card2, #card3, #calcCard, #stateSelect, .radio-group, #pdfBar { display: none !important; }
+      @page { size: A4 landscape; margin: 12mm 10mm; }
+
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      body { background: white; font-size: 10pt; }
+      header { background: #1a365d !important; padding: 10px 16px; }
+      header h1 { font-size: 1.2rem; }
+
+      .container { max-width: 100%; padding: 0; margin: 0; }
+
+      /* Hide all input cards and interactive controls */
+      #card1, #card2, #card3, #calcCard, #pdfBar { display: none !important; }
+
+      /* Show print-only job details card */
+      #printJobCard { display: block !important; margin-bottom: 8px; }
+
+      /* Cards */
+      .card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 6px; padding: 10px 14px; }
+
+      /* Open all result sections */
       .result-section-body { display: block !important; }
       .result-section-header .chevron { display: none; }
       .result-section-header { cursor: default; pointer-events: none; }
+
+      /* Keep each result section on one page — no mid-section breaks */
+      .result-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 6px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      /* TMP Diagram always starts on its own page */
+      #sec-diagram {
+        break-before: page;
+        page-break-before: always;
+      }
+
+      /* Diagram SVG fills the page width */
       .diagram-scroll { overflow: visible; }
-      .diagram-scroll svg { width: 100% !important; }
-      .calc-btn { display: none; }
-      footer { page-break-before: always; }
+      .diagram-scroll svg { width: 100% !important; max-width: 100%; }
+
+      .calc-btn { display: none !important; }
+
+      /* Footer on its own page */
+      footer { break-before: page; page-break-before: always; font-size: 8pt; }
+
+      /* Ensure colored elements print correctly */
+      .result-hero { background: #1a365d !important; color: white !important; }
+      .rtable th { background: #1a365d !important; color: white !important; }
+      .sign-row.header { background: #1a365d !important; color: white !important; }
+      .result-section-header { background: #f7fafc !important; }
+      .kv-row:nth-child(even) { background: #f7fafc !important; }
     }
   </style>
 </head>
@@ -291,7 +334,7 @@
 <!-- ═══════════════════════════════════════════════════════
      STEP 1 — STATE, WORKS TYPE, ROAD CATEGORY
 ════════════════════════════════════════════════════════ -->
-<div class="card">
+<div class="card" id="card1">
   <div class="card-title"><span class="step-num">1</span>State / Territory &amp; Job Setup</div>
 
   <div class="form-group">
@@ -722,6 +765,13 @@
     </div>
 
   </div>
+</div>
+
+<!-- Print-only job details card: hidden on screen, shown in @media print -->
+<div id="printJobCard" style="display:none;" class="card">
+  <div class="card-title" style="font-size:.95rem; border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">Job Details</div>
+  <div id="printJobContent"></div>
+  <p style="font-size:.74rem;color:#718096;margin-top:10px;font-style:italic;">Generated: <span id="printDateTime"></span> &nbsp;&bull;&nbsp; This calculation is a guide only — verify all values on site with a competent person.</p>
 </div>
 
 </div><!-- /container -->
@@ -1532,6 +1582,46 @@ function calculate() {
     `${nL} lane${nL>1?'s':''} &bull; ` +
     `${TMP_NAMES[v('tmpType')]||''}`;
   document.getElementById('calcSummaryBar').style.display = 'block';
+
+  // Populate print-only job details card
+  const worksLabel = works==='short'?'Short Term Works':works==='long'?'Long Term Works':'Mobile Works';
+  const catLabel   = roadCat===1?'Cat 1 — Local / Council':roadCat===2?'Cat 2 — Arterial / State Road':'Cat 3 — Freeway / Motorway';
+  const envLabel   = v('roadEnv')==='builtup'?'Built-up (Urban)':'Open Road (Rural)';
+  const tcLabel    = {tc:'Traffic Controller',ptl:'Portable Traffic Lights',boom:'Portable Boom Barrier'}[v('tcMethod')||'tc'] || 'Traffic Controller';
+  document.getElementById('printJobContent').innerHTML = `
+    <table class="rtable" style="font-size:.85rem;">
+      <thead><tr><th colspan="4" style="font-size:.9rem;">Calculation Inputs</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="width:22%">State / Territory</td><td style="width:28%;font-weight:700">${(STATE_INFO[state]||{}).name||state}</td>
+          <td style="width:22%">Type of Works</td><td style="font-weight:700">${worksLabel}</td>
+        </tr>
+        <tr>
+          <td>Road Category</td><td style="font-weight:700">${catLabel}</td>
+          <td>Road Environment</td><td style="font-weight:700">${envLabel}</td>
+        </tr>
+        <tr>
+          <td>Posted Speed</td><td style="font-weight:700">${vPosted} km/h</td>
+          <td>Work Zone Speed</td><td style="font-weight:700">${vWork ? vWork+' km/h' : 'No reduction'}</td>
+        </tr>
+        <tr>
+          <td>Lanes (each direction)</td><td style="font-weight:700">${nL}</td>
+          <td>Lane Width</td><td style="font-weight:700">${n('laneWidth')||3.5} m</td>
+        </tr>
+        <tr>
+          <td>Lateral Shift / Offset</td><td style="font-weight:700">${n('lateralShift')||3.5} m</td>
+          <td>Work Area Length</td><td style="font-weight:700">${n('workAreaLen') ? n('workAreaLen')+' m' : 'Estimated from queue'}</td>
+        </tr>
+        <tr>
+          <td>TM Arrangement</td><td style="font-weight:700">${TMP_NAMES[v('tmpType')]||v('tmpType')}</td>
+          <td>Traffic Control Method</td><td style="font-weight:700">${tcLabel}</td>
+        </tr>
+        <tr>
+          <td>Applicable Standard</td><td colspan="3" style="font-weight:700">${(STATE_INFO[state]||{}).badges ? (STATE_INFO[state].badges.join(' &bull; ')) : 'AS1742.3'}</td>
+        </tr>
+      </tbody>
+    </table>`;
+  document.getElementById('printDateTime').textContent = new Date().toLocaleString('en-AU', {dateStyle:'long',timeStyle:'short'});
 
   show('resultsArea');
   document.getElementById('pdfBar').style.display = 'block';
