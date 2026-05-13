@@ -851,6 +851,15 @@ function agttmSpeedRange(spd) {
   return `${prev[0]+1}–${r[0]} km/h`;
 }
 
+// AGTTM Sign Spacing (m) — advance warning sign intervals, AGTTM04-21 / AS1742.3
+// Confirmed: 60 km/h → 45 m; 80 km/h → 80 m; 100 km/h → 125 m
+const AGTTM_SP = {30:25, 40:30, 50:40, 60:45, 75:60, 85:80, 95:100, 105:125, 999:150};
+function agttmSp(spd) {
+  var keys = Object.keys(AGTTM_SP).map(Number).sort(function(a,b){return a-b;});
+  for (var i=0;i<keys.length;i++) if (spd<=keys[i]) return AGTTM_SP[keys[i]];
+  return 150;
+}
+
 // Advance warning sign spacing (m) minimum — AS1742.3 Table 3.3 / AGTTM04 / state guides
 // Index 0=Cat1, 1=Cat2, 2=Cat3
 const SIGN_SP_TBL = {
@@ -1470,7 +1479,7 @@ function calcSightDistances(vPosted, vWork, env, Q) {
 
 function calcSignLayout(vPosted, vWork, closureType, mt, ct, buf, D, numLanes, worksType) {
   const s      = sgn();
-  const sp     = signSpacing(vPosted, roadCat);
+  const sp     = ['VIC','SA','TAS','NT','ACT'].includes(state) ? agttmSp(vPosted) : signSpacing(vPosted, roadCat);
   const hasRed = vWork && vWork < vPosted;
   const isMob  = closureType === 'mobile' || worksType === 'mobile';
 
@@ -2975,12 +2984,63 @@ function zoneLabel(x1, x2, y, label, col) {
   return s;
 }
 
+// ── AGTTM Plan-View Sign Shapes ───────────────────────────────────────────────
+// Individual sign faces drawn in plan view (bird's-eye).
+// Signs placed in shoulder area; speed signs nearest traffic as per AGTTM.
+
+// Warning diamond — RWA, Works Marker, Traffic Controller Ahead, etc.
+function aWarnSign(cx, cy, lines) {
+  var d=13;
+  var pts=r(cx)+','+r(cy-d)+' '+r(cx+d)+','+r(cy)+' '+r(cx)+','+r(cy+d)+' '+r(cx-d)+','+r(cy);
+  var s='<polygon points="'+pts+'" fill="#f97316" stroke="#7c2d12" stroke-width="1.2"/>';
+  var n=lines.length, lh=Math.min(d*0.68, 5);
+  var y0=cy-(n-1)*lh/2+1.2;
+  lines.forEach(function(l,i){
+    s+='<text x="'+r(cx)+'" y="'+r(y0+i*lh)+'" text-anchor="middle" font-size="3.5" font-weight="bold" fill="white">'+l+'</text>';
+  });
+  return s;
+}
+
+// Speed limit circle — Australian standard: white bg, red ring, black number
+function aSpdSign(cx, cy, spd) {
+  var s='<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="10" fill="#dc2626"/>';
+  s+='<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="8" fill="white"/>';
+  var fs=String(spd).length>2?4.5:6;
+  s+='<text x="'+r(cx)+'" y="'+r(cy+2.3)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+spd+'</text>';
+  return s;
+}
+
+// Rectangular sign — PTS, ERW, WM, LSM, TC, Lane Status, etc.
+function aRectSign(cx, cy, lines, bg, fg, w, h) {
+  bg=bg||'white'; fg=fg||'#111'; w=w||26; h=h||15;
+  var border=(bg==='white'||bg==='#fff')?'#333':fg;
+  var s='<rect x="'+r(cx-w/2)+'" y="'+r(cy-h/2)+'" width="'+r(w)+'" height="'+r(h)+'" fill="'+bg+'" stroke="'+border+'" stroke-width="1" rx="1.5"/>';
+  var n=lines.length, lh=(h-2)/Math.max(n,1);
+  var y0=cy-(n-1)*lh/2+1.5;
+  lines.forEach(function(l,i){
+    var fs=w<16?3:(n>2?3.2:3.8);
+    s+='<text x="'+r(cx)+'" y="'+r(y0+i*lh)+'" text-anchor="middle" font-size="'+fs+'" font-weight="bold" fill="'+fg+'">'+l+'</text>';
+  });
+  return s;
+}
+
+// Arrowboard / Truck-Mounted Attenuator — amber chevrons pointing left
+function aTMAarrow(cx, cy) {
+  var W=30,H=15;
+  var s='<rect x="'+r(cx-W/2)+'" y="'+r(cy-H/2)+'" width="'+r(W)+'" height="'+r(H)+'" fill="#1c1917" rx="2" stroke="#374151" stroke-width="0.8"/>';
+  [[cx-9,cy],[cx-1,cy],[cx+7,cy]].forEach(function(p){
+    s+='<polyline points="'+r(p[0]+4.5)+','+r(p[1]-4)+' '+r(p[0])+','+r(p[1])+' '+r(p[0]+4.5)+','+r(p[1]+4)+'" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  });
+  s+='<text x="'+r(cx+W/2-4)+'" y="'+r(cy+2)+'" text-anchor="end" font-size="3.8" font-weight="bold" fill="#f59e0b">AB</text>';
+  return s;
+}
+
 function svgAgttmLaneClosure(p) {
   var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
   var nL=Math.max(1,p.nLanes||1), vPosted=p.vPosted, vWork=p.vWork;
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=34, SH=22;
+  var LANE_H=34, SH=36;   // SH=36 to accommodate 3-level sign stacking per AGTTM
   var isUndivided = !p.roadConfig || p.roadConfig === 'undivided';
   var isDivided   = p.roadConfig === 'divided';
   var oppLanes    = isUndivided ? 1 : 0;
@@ -3042,21 +3102,44 @@ function svgAgttmLaneClosure(p) {
   // CLOSED label on approach closed lane
   s+=svgText((xTS/2+xTS/2+xS1/2),closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
 
-  // MMS signs — placed at road shoulder (plan view), no posts
+  // ── AGTTM Sign Sequence — Lane Closure ──────────────────────────────────────
+  // Speed signs positioned closest to traffic (SNEAR = bottom of shoulder).
+  // Layout per AGTTM04: RWA/WM → WM/Speed/RW → PTS/TC → LSM/Merge →
+  //   3×LSM in taper → Arrowboard → Work Area → ERW + Release Speed
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
   var hasSpd = vWork && vWork < vPosted;
-  s+=aMMS(xS1, SIGN_CY, [
-    {type:'warn', lines:['ROAD','WORK','AHEAD']},
-    hasSpd ? {type:'speed', spd:vWork} : {type:'warn', lines:['LANE','CLOSED','AHEAD']}
-  ]);
-  if(hasSpd) {
-    s+=aMMS(xS2, SIGN_CY, [{type:'warn', lines:['LANE','CLOSED','AHEAD']}]);
+
+  // S1 (furthest): Road Work Ahead diamond + Works Marker
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+
+  // S2: Speed sign nearest traffic + Road Work diamond above
+  if (hasSpd) {
+    s+=aSpdSign(xS2, SNEAR, vWork);
+    s+=aWarnSign(xS2, SFAR, ['ROAD','WORK']);
+  } else {
+    s+=aWarnSign(xS2, SMID, ['LANE','CLOSED','AHEAD']);
   }
-  s+=aMMS(xS3, SIGN_CY, [{type:'warn', lines:['KEEP','LEFT']}]);
-  s+=aMMS(xTS, SIGN_CY, [{type:'blue', lines:['MERGE']}]);
-  s+=aMMS(xSE, SIGN_CY, [
-    {type:'end', lines:['END','ROAD','WORK']},
-    {type:'end', lines:['DRIVE','SAFELY']}
-  ]);
+
+  // S3 (45m before taper): Prepare to Stop + Traffic Controller Ahead
+  s+=aRectSign(xS3, SNEAR, ['PREPARE','TO STOP'], '#dc2626','white');
+  s+=aWarnSign(xS3, SFAR, ['TRAFFIC','CONTROLLER']);
+
+  // At taper start: Lane Status / Merge sign
+  s+=aRectSign(xTS, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
+
+  // 3× LSM signs evenly spaced within taper
+  if (xTE-xTS > 10) {
+    var lstep=(xTE-xTS)/4;
+    for (var li=1;li<=3;li++) s+=aRectSign(xTS+li*lstep, SNEAR, ['← LSM'], '#1a365d','white',20,11);
+  }
+
+  // Arrowboard / TMA at end of merge taper (start of work area)
+  s+=aTMAarrow(xTE, SMID);
+
+  // ERW + Release Speed at termination (speed closest to traffic)
+  s+=aRectSign(xSE, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xSE, SNEAR, vPosted);  // release speed — nearest to traffic
 
   // Dimension lines
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
@@ -3098,15 +3181,8 @@ function svgAgttmLaneClosure(p) {
   s+=zoneLabel(xCS,xCE,zY,'TERM.','#f97316');
   s+=zoneLabel(xCE,xSE,zY,'TERMINATION ZONE','#16a34a');
 
-  // Speed banners
-  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
-  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
-  if(vWork&&vWork<vPosted){
-    s+=svgRect(xWS-2,ROAD_TOP-14,44,13,'#dc2626','rx="3" opacity="0.9"');
-    s+=svgText(xWS+20,ROAD_TOP-4,vWork+' km/h','middle',7.5,'white',true);
-  }
-  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel','start',9,'#1a365d',true);
-  s+=svgText(SVG_W-RM,ROAD_TOP-28,'LANE CLOSURE — '+p.state+' (AGTTM04 / AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'LANE CLOSURE — '+p.state+' (AGTTM04 / AS1742.3) — '+vPosted+(hasSpd?' → '+vWork:'')+'km/h','end',8,'#546e7a',false);
 
   return wrapSVG(s,SVG_W,SVG_H);
 }
@@ -3116,7 +3192,7 @@ function svgAgttmShuttleflow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc';
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=22;
+  var LANE_H=36, SH=36;
   var ROAD_TOP=90;
   var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var rH=2*LANE_H;
@@ -3175,19 +3251,23 @@ function svgAgttmShuttleflow(p) {
   s+=aCtrl(xTCa,ctrlY,tcMethod);
   s+=aCtrl(xTCd,ctrlY,tcMethod);
 
-  // MMS signs — shoulder level, no posts
+  // AGTTM Sign Sequence — Shuttleflow
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
   var hasSpd2 = vWork && vWork < vPosted;
-  var ctrlPanelType = (tcMethod==='tc') ? 'red' : 'red';
-  var ctrlLines = (tcMethod==='tc') ? ['PREPARE','TO STOP'] : ['STOP ON','RED SIGNAL'];
-  s+=aMMS(xRWA1, SIGN_CY, [
-    {type:'warn', lines:['ROAD','WORK','AHEAD']},
-    hasSpd2 ? {type:'speed', spd:vWork} : null,
-    {type:ctrlPanelType, lines:ctrlLines}
-  ].filter(Boolean));
-  s+=aMMS(xEND, SIGN_CY, [
-    {type:'end', lines:['END','ROAD','WORK']},
-    {type:'end', lines:['DRIVE','SAFELY']}
-  ]);
+  // Approach: RWA + WM → Speed → PTS/TC or Stop on Red
+  s+=aWarnSign(xRWA1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xRWA1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpd2) {
+    s+=aSpdSign(xTSa-sp/2, SNEAR, vWork);
+    s+=aWarnSign(xTSa-sp/2, SFAR, ['ROAD','WORK']);
+  }
+  // PTS or Stop on Red closest to taper
+  var ctrlTxt = tcMethod==='ptl' ? ['STOP ON','RED SIGNAL'] : ['PREPARE','TO STOP'];
+  s+=aRectSign(xTSa, SNEAR, ctrlTxt, '#dc2626','white');
+  s+=aWarnSign(xTSa, SFAR, tcMethod==='ptl' ? ['TRAFFIC','SIGNALS'] : ['TRAFFIC','CONTROLLER']);
+  // Far end: ERW + release speed
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
 
   // Dimension labels
   s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
@@ -3196,17 +3276,9 @@ function svgAgttmShuttleflow(p) {
   s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
   s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
 
-  // Speed banners
-  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
-  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
-  if(vWork&&vWork<vPosted){
-    s+=svgRect(xWS-2,ROAD_TOP-14,44,13,'#dc2626','rx="3" opacity="0.9"');
-    s+=svgText(xWS+20,ROAD_TOP-4,vWork+' km/h','middle',7.5,'white',true);
-  }
-  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel (Approach)','start',9,'#1a365d',true);
-  s+=svgText(SVG_W-RM,ROAD_BOT+SH+38,'← Opposing Direction','end',8,'#1d4ed8',false);
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ / ← Direction of Travel (Both Directions)','start',9,'#1a365d',true);
   var ctrlLabel=tcMethod==='tc'?'Traffic Controllers':'Portable Traffic Lights';
-  s+=svgText(SVG_W/2,SVG_H-8,ctrlLabel+' at each end of shuttleflow section','middle',8,'#475569',false);
+  s+=svgText(SVG_W/2,SVG_H-8,ctrlLabel+' at each end of shuttleflow section — SHUTTLEFLOW — '+p.state+' (AGTTM04 / AS1742.3)','middle',8,'#475569',false);
 
   return wrapSVG(s,SVG_W,SVG_H+20);
 }
@@ -3216,7 +3288,7 @@ function svgAgttmContraflow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc', nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=34, SH=22, medH=14;
+  var LANE_H=34, SH=36, medH=14;
   var ROAD_TOP=90;
   var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var normalH=nLanes*LANE_H, cfH=LANE_H;
@@ -3289,17 +3361,18 @@ function svgAgttmContraflow(p) {
   s+=aCtrl(xTSa-10,cfBot+SH+6,tcMethod);
   s+=aCtrl(xTEd+10,cfBot+SH+6,tcMethod);
 
-  // MMS signs — shoulder level, no posts
+  // AGTTM Sign Sequence — Contraflow
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
   var hasSpdCF = vWork && vWork < vPosted;
-  s+=aMMS(xRWA1, SIGN_CY, [
-    {type:'warn', lines:['ROAD','WORK','AHEAD']},
-    hasSpdCF ? {type:'speed', spd:vWork} : null
-  ].filter(Boolean));
-  s+=aMMS(xTSa, SIGN_CY, [{type:'blue', lines:['MERGE']}]);
-  s+=aMMS(xEND, SIGN_CY, [
-    {type:'end', lines:['END','ROAD','WORK']},
-    {type:'end', lines:['DRIVE','SAFELY']}
-  ]);
+  s+=aWarnSign(xRWA1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xRWA1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdCF) {
+    s+=aSpdSign(xTSa-sp/2, SNEAR, vWork);
+    s+=aWarnSign(xTSa-sp/2, SFAR, ['ROAD','WORK']);
+  }
+  s+=aRectSign(xTSa, SMID, ['MERGE →','CONTRAFLOW'], '#1a365d','white',34,13);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
 
   // Dimensions
   s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
@@ -3308,13 +3381,10 @@ function svgAgttmContraflow(p) {
   s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m departure taper');
   s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
 
-  // Speed banners + direction labels
-  s+=svgRect(0,normalTop-14,44,13,'#1a365d','rx="3" opacity="0.9"');
-  s+=svgText(22,normalTop-4,vPosted+' km/h','middle',7.5,'white',true);
-  s+=svgText(LM,normalTop-28,'→ Normal Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Normal Direction of Travel','start',9,'#1a365d',true);
   s+=svgText(LM,cfBot+6,'← Contraflow Direction','start',8,'#1d4ed8',false);
-  s+=svgText(SVG_W-RM,normalTop-28,'CONTRAFLOW — '+p.state+' (AGTTM / AS1742.3)','end',8,'#546e7a',false);
-  s+=svgText(SVG_W/2,SVG_H-8,'NOTE: Rigid separation required between opposing traffic flows — seek engineer approval','middle',7.5,'#dc2626',false);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'CONTRAFLOW — '+p.state+' (AGTTM / AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(SVG_W/2,SVG_H-8,'NOTE: Rigid separation required between opposing flows — seek engineer approval','middle',7.5,'#dc2626',false);
 
   return wrapSVG(s,SVG_W,SVG_H);
 }
@@ -3324,7 +3394,7 @@ function svgAgttmLaneNarrow(p) {
   var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=22, narrowPx=LANE_H*0.38;
+  var LANE_H=36, SH=36, narrowPx=LANE_H*0.38;
   var ROAD_TOP=90;
   var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
@@ -3366,17 +3436,15 @@ function svgAgttmLaneNarrow(p) {
   if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,ROAD_TOP+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
   if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,ROAD_TOP+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
 
-  // MMS signs — shoulder level, no posts
+  // AGTTM Sign Sequence — Lane Narrowing
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
   var hasSpdLN = vWork && vWork < vPosted;
-  s+=aMMS(xS1, SIGN_CY, [
-    {type:'warn', lines:['ROAD','WORK','AHEAD']},
-    hasSpdLN ? {type:'speed', spd:vWork} : null
-  ].filter(Boolean));
-  s+=aMMS((xS1+xTS)/2, SIGN_CY, [{type:'warn', lines:['LANE','NARROWS']}]);
-  s+=aMMS(xEND, SIGN_CY, [
-    {type:'end', lines:['END','ROAD','WORK']},
-    {type:'end', lines:['DRIVE','SAFELY']}
-  ]);
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdLN) s+=aSpdSign((xS1+xTS)/2, SNEAR, vWork);
+  s+=aWarnSign((xS1+xTS)/2, SFAR, ['LANE','NARROWS']);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
 
   s+=aDim(xS1,xTS,DIM_Y1,sp+'m');
   s+=aDim(xTS,xTE,DIM_Y1,mt+'m taper');
@@ -3384,10 +3452,8 @@ function svgAgttmLaneNarrow(p) {
   s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
   s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
 
-  s+=svgRect(0,ROAD_TOP-14,44,13,'#1a365d','rx="3" opacity="0.9"');
-  s+=svgText(22,ROAD_TOP-4,vPosted+' km/h','middle',7.5,'white',true);
-  s+=svgText(LM,ROAD_TOP-28,'→ Direction of Travel','start',9,'#1a365d',true);
-  s+=svgText(SVG_W-RM,ROAD_TOP-28,'LANE NARROWING — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'LANE NARROWING — '+p.state+' (AGTTM04 / AS1742.3)','end',8,'#546e7a',false);
 
   return wrapSVG(s,SVG_W,SVG_H);
 }
@@ -3397,7 +3463,7 @@ function svgAgttmShoulder(p) {
   var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
 
   var LM=50, RM=50, AVAIL=820;
-  var LANE_H=36, SH=24;
+  var LANE_H=36, SH=36;
   var ROAD_TOP=90;
   var SIGN_CY=Math.round(ROAD_TOP-SH/2);
   var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
@@ -3441,17 +3507,15 @@ function svgAgttmShoulder(p) {
   s+=svgText(SVG_W/2,ROAD_TOP+ROAD_H/2+4,'Travel lanes remain open','middle',9,'white',false);
   s+=svgText(10,ROAD_TOP-SH/2+4,'Shoulder','start',7.5,'#166534',false);
 
-  // MMS signs — at shoulder level, no posts
+  // AGTTM Sign Sequence — Shoulder Works
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
   var hasSpdSH = vWork && vWork < vPosted;
-  s+=aMMS(xS1, SIGN_CY, [
-    {type:'warn', lines:['ROAD','WORK','AHEAD']},
-    hasSpdSH ? {type:'speed', spd:vWork} : null
-  ].filter(Boolean));
-  s+=aMMS(xS2, SIGN_CY, [{type:'warn', lines:['SHOULDER','WORKS']}]);
-  s+=aMMS(xEND, SIGN_CY, [
-    {type:'end', lines:['END','ROAD','WORK']},
-    {type:'end', lines:['DRIVE','SAFELY']}
-  ]);
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdSH) s+=aSpdSign(xS2, SNEAR, vWork);
+  s+=aWarnSign(xS2, SFAR, ['SHOULDER','WORKS']);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
 
   s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
   s+=aDim(xS2,xWS,DIM_Y1,sp+'m');
