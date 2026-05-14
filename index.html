@@ -1,0 +1,3610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Management Calculator — EoQ, Tapers &amp; Sign Layout</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-dark: #1a365d;
+      --blue:      #2b6cb0;
+      --blue-light:#ebf8ff;
+      --gray-bg:   #f0f4f8;
+      --gray-1:    #f7fafc;
+      --gray-2:    #e2e8f0;
+      --gray-3:    #718096;
+      --text:      #2d3748;
+      --orange:    #dd6b20;
+      --green:     #276749;
+      --red:       #c53030;
+      --radius:    10px;
+    }
+
+    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:var(--gray-bg); color:var(--text); min-height:100vh; }
+
+    /* ── Header ── */
+    header { background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%); color:#fff; padding:20px 40px; box-shadow:0 2px 12px rgba(0,0,0,.25); text-align:center; }
+    header h1 { font-size:1.6rem; font-weight:800; letter-spacing:-.02em; }
+    header p  { font-size:.83rem; opacity:.82; margin-top:4px; }
+    .header-badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; justify-content:center; }
+    .badge { background:rgba(255,255,255,.18); border-radius:20px; padding:3px 10px; font-size:.72rem; font-weight:600; }
+
+    /* ── Layout ── */
+    .container { max-width:960px; margin:28px auto; padding:0 18px; }
+
+    /* ── Cards ── */
+    .card { background:#fff; border-radius:var(--radius); padding:26px 30px; box-shadow:0 3px 16px rgba(0,0,0,.07); margin-bottom:22px; }
+    .card-title {
+      font-size:1.05rem; font-weight:800; color:var(--blue-dark);
+      margin-bottom:20px; padding-bottom:12px;
+      border-bottom:2px solid var(--gray-2);
+      display:flex; align-items:center; gap:10px;
+    }
+    .step-num {
+      background:var(--blue); color:#fff; border-radius:50%;
+      width:26px; height:26px; display:inline-flex; align-items:center;
+      justify-content:center; font-size:.78rem; font-weight:800; flex-shrink:0;
+    }
+
+
+    /* ── Radio groups ── */
+    .radio-group { display:flex; gap:10px; flex-wrap:wrap; }
+    .radio-btn {
+      padding:9px 16px; border:2px solid var(--gray-2); border-radius:8px;
+      cursor:pointer; font-size:.85rem; font-weight:600; background:#fff;
+      color:#4a5568; transition:all .15s; user-select:none;
+    }
+    .radio-btn:hover { border-color:var(--blue); color:var(--blue); }
+    .radio-btn.active { background:var(--blue-dark); border-color:var(--blue-dark); color:#fff; }
+    .radio-btn.works-short.active { background:#276749; border-color:#276749; }
+    .radio-btn.works-long.active  { background:#744210; border-color:#744210; }
+    .radio-btn.works-mob.active   { background:#553c9a; border-color:#553c9a; }
+
+    /* ── Form elements ── */
+    .form-row   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-row.three { grid-template-columns:1fr 1fr 1fr; }
+    .form-row.four  { grid-template-columns:1fr 1fr 1fr 1fr; }
+    @media(max-width:600px){ .form-row,.form-row.three,.form-row.four{ grid-template-columns:1fr; } }
+
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-weight:700; font-size:.82rem; margin-bottom:5px; color:var(--text); }
+    .unit-hint { font-weight:400; color:var(--gray-3); }
+    .hint { font-size:.75rem; color:var(--gray-3); margin-top:4px; }
+    .example { font-size:.74rem; color:var(--blue); margin-top:2px; }
+
+    input[type="number"] {
+      width:100%; padding:9px 12px; border:2px solid var(--gray-2); border-radius:8px;
+      font-size:.92rem; background:#fff; color:var(--text); transition:border-color .15s;
+    }
+    input[type="number"]:focus { outline:none; border-color:var(--blue); }
+    input[type="number"]::placeholder { color:#a0aec0; }
+
+    select {
+      width:100%; padding:10px 12px; border:2px solid var(--gray-2); border-radius:8px;
+      font-size:.92rem; background:#fff; color:var(--text); transition:border-color .15s;
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center;
+      padding-right:36px;
+    }
+    select:focus { outline:none; border-color:var(--blue); }
+
+    .section-label {
+      font-size:.73rem; font-weight:800; text-transform:uppercase;
+      letter-spacing:.07em; color:var(--gray-3); margin:18px 0 12px;
+    }
+
+    /* ── Formula box ── */
+    .formula-box {
+      background:var(--gray-1); border:1px solid var(--gray-2); border-radius:8px;
+      padding:13px 16px; margin-bottom:18px; font-size:.82rem; color:#4a5568; line-height:1.5;
+    }
+    .formula-box strong { color:var(--blue-dark); }
+
+    /* ── Tabs ── */
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+    .tab {
+      padding:7px 14px; border:2px solid var(--gray-2); border-radius:6px;
+      cursor:pointer; font-size:.8rem; font-weight:700; background:#fff;
+      color:var(--gray-3); transition:all .15s;
+    }
+    .tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+
+    /* ── Calculate button ── */
+    .calc-btn {
+      width:100%; padding:15px; background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dark) 100%);
+      color:#fff; border:none; border-radius:var(--radius); font-size:1.05rem; font-weight:800;
+      cursor:pointer; margin-top:6px; transition:opacity .15s, transform .1s; letter-spacing:.02em;
+    }
+    .calc-btn:hover { opacity:.93; transform:translateY(-1px); }
+
+    /* ── Results toggle ── */
+    .result-section { margin-bottom:18px; border:2px solid var(--gray-2); border-radius:var(--radius); overflow:hidden; }
+    .result-section-header {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 20px; background:var(--gray-1); cursor:pointer;
+      font-weight:700; font-size:.92rem; color:var(--blue-dark);
+      user-select:none;
+    }
+    .result-section-header:hover { background:#edf2f7; }
+    .result-section-header .chevron { font-size:.85rem; transition:transform .2s; }
+    .result-section-header.open .chevron { transform:rotate(90deg); }
+    .result-section-body { padding:20px; display:none; }
+    .result-section-body.open { display:block; }
+
+    /* ── Hero number ── */
+    .result-hero {
+      background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%);
+      color:#fff; border-radius:var(--radius); padding:24px; text-align:center; margin-bottom:18px;
+    }
+    .hero-label { font-size:.83rem; opacity:.82; margin-bottom:4px; }
+    .hero-value { font-size:3rem; font-weight:900; line-height:1; }
+    .hero-unit  { font-size:1rem; opacity:.82; margin-top:4px; }
+
+    /* ── Result table ── */
+    .rtable { width:100%; border-collapse:collapse; font-size:.84rem; }
+    .rtable th { background:var(--blue-dark); color:#fff; padding:8px 12px; text-align:left; }
+    .rtable th:last-child { text-align:right; }
+    .rtable td { padding:7px 12px; border-bottom:1px solid var(--gray-2); }
+    .rtable tr:last-child td { border-bottom:none; }
+    .rtable tr:nth-child(even) td { background:var(--gray-1); }
+    .rtable td:last-child { text-align:right; font-weight:700; }
+    .rtable td.center { text-align:center; }
+
+    /* ── Key-value rows ── */
+    .kv-list { border:1px solid var(--gray-2); border-radius:8px; overflow:hidden; }
+    .kv-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 14px; border-bottom:1px solid var(--gray-2); font-size:.85rem;
+    }
+    .kv-row:last-child { border-bottom:none; }
+    .kv-row:nth-child(even) { background:var(--gray-1); }
+    .kv-key { color:var(--gray-3); }
+    .kv-val { font-weight:700; color:var(--text); }
+    .kv-val.warn { color:var(--red); }
+    .kv-val.ok   { color:var(--green); }
+
+    /* ── Sign layout table ── */
+    .sign-layout { border:1px solid var(--gray-2); border-radius:8px; overflow:hidden; }
+    .sign-row {
+      display:grid; grid-template-columns:90px 1fr 1fr;
+      gap:0; border-bottom:1px solid var(--gray-2);
+      font-size:.82rem;
+    }
+    .sign-row:last-child { border-bottom:none; }
+    .sign-row > div { padding:8px 12px; }
+    .sign-row .dist { font-weight:800; color:var(--blue-dark); font-size:.85rem; }
+    .sign-row .item { }
+    .sign-row .note { color:var(--gray-3); font-size:.78rem; }
+    .sign-row.header { background:var(--blue-dark); color:#fff; font-weight:700; }
+    .sign-row.header .dist,.sign-row.header .item,.sign-row.header .note { color:#fff; }
+    .sign-row.s-works    { background:#fff3cd; }
+    .sign-row.s-buffer   { background:#fef3f2; }
+    .sign-row.s-taper    { background:#f0fdf4; }
+    .sign-row.s-sign-req { background:#fffbeb; }
+    .sign-row.s-sign-spd { background:#fef3c7; }
+    .sign-row.s-sign-warn{ background:#eff6ff; }
+    .sign-row.s-end      { background:#f0fdf4; }
+
+    /* ── Alert boxes ── */
+    .box { border-radius:6px; padding:11px 16px; margin-top:12px; font-size:.83rem; line-height:1.5; }
+    .box-warn  { background:#fff5f5; border-left:4px solid #e53e3e; color:var(--red); }
+    .box-info  { background:var(--blue-light); border-left:4px solid var(--blue); color:#2c5282; }
+    .box-ok    { background:#f0fff4; border-left:4px solid #38a169; color:var(--green); }
+    .box-amber { background:#fffbeb; border-left:4px solid var(--orange); color:#7b341e; }
+
+    /* ── Summary grid ── */
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media(max-width:600px){ .summary-grid{ grid-template-columns:1fr; } }
+    .summary-tile {
+      background:var(--gray-1); border:1px solid var(--gray-2); border-radius:8px;
+      padding:14px 16px; text-align:center;
+    }
+    .summary-tile .st-label { font-size:.73rem; color:var(--gray-3); font-weight:600; margin-bottom:4px; }
+    .summary-tile .st-value { font-size:1.6rem; font-weight:900; color:var(--blue-dark); }
+    .summary-tile .st-unit  { font-size:.78rem; color:var(--gray-3); margin-top:2px; }
+
+    /* ── Misc ── */
+    .hidden { display:none; }
+    .mt12 { margin-top:12px; }
+    .mb12 { margin-bottom:12px; }
+    .divider { border:none; border-top:1px solid var(--gray-2); margin:16px 0; }
+    .ref-note { font-size:.75rem; color:var(--gray-3); font-style:italic; margin-top:8px; }
+
+    footer {
+      text-align:center; padding:24px 20px; color:var(--gray-3); font-size:.76rem; line-height:1.8;
+      border-top:1px solid var(--gray-2); margin-top:10px; background:#fff;
+    }
+
+    /* ── TMP Diagram ── */
+    .diagram-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; background:#f1f5f9; border-radius:8px; padding:10px 4px; }
+    .diagram-scroll svg { display:block; min-width:700px; }
+    .tmp-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; font-size:.78rem; }
+    .lg-item { display:flex; align-items:center; gap:6px; }
+    .lg-box  { width:16px; height:14px; border-radius:3px; flex-shrink:0; border:1px solid rgba(0,0,0,.2); }
+    .lg-line { width:24px; height:3px; flex-shrink:0; }
+    .diagram-title { font-size:.9rem; font-weight:800; color:var(--blue-dark); margin-bottom:10px; }
+    .diagram-notes { font-size:.8rem; color:#4a5568; margin-top:10px; line-height:1.5; }
+    .dim-badge {
+      display:inline-block; background:var(--blue-dark); color:#fff;
+      border-radius:4px; padding:2px 7px; font-size:.72rem; font-weight:700; margin:2px;
+    }
+
+    /* Mobile touch improvements */
+    @media (max-width: 768px) {
+      .container { padding: 0 12px; }
+      header { padding: 16px 20px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 18px 16px; margin-bottom: 16px; }
+      .card-title { font-size: .95rem; }
+      select, input[type="number"] { padding: 12px 14px; font-size: 1rem; min-height: 48px; }
+      .calc-btn { padding: 18px; font-size: 1rem; min-height: 54px; position: sticky; bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+      .radio-btn { padding: 12px 14px; font-size: .88rem; min-height: 48px; }
+      .result-section-header { padding: 16px 16px; font-size: .9rem; min-height: 52px; }
+      .diagram-scroll { padding: 8px 2px; }
+      .pdf-btn { padding: 16px 24px; font-size: 1rem; min-height: 52px; width: 100%; }
+    }
+
+    /* Sticky calculate on mobile */
+    @media (max-width: 600px) {
+      #calcCard { position: sticky; bottom: 0; z-index: 10; padding: 12px; background: #f0f4f8; }
+    }
+
+    .pdf-btn {
+      padding:13px 28px; background:linear-gradient(135deg,#1a365d,#2b6cb0);
+      color:#fff; border:none; border-radius:8px; font-size:.95rem; font-weight:700;
+      cursor:pointer; transition:opacity .15s; letter-spacing:.01em;
+    }
+    .pdf-btn:hover { opacity:.9; }
+    .pdf-btn.share-btn { background:linear-gradient(135deg,#276749,#38a169); }
+
+    @media print {
+      @page { size: A4 portrait; margin: 15mm 12mm; }
+
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      body { background: white; font-size: 10pt; }
+      header { background: #1a365d !important; padding: 10px 16px; }
+      header h1 { font-size: 1.2rem; }
+
+      .container { max-width: 100%; padding: 0; margin: 0; }
+
+      /* Hide all input cards and interactive controls */
+      #card1, #card2, #card3, #calcCard, #pdfBar { display: none !important; }
+
+      /* Show print-only job details card */
+      #printJobCard { display: block !important; margin-bottom: 8px; }
+
+      /* Cards */
+      .card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 6px; padding: 10px 14px; }
+
+      /* Open all result sections */
+      .result-section-body { display: block !important; }
+      .result-section-header .chevron { display: none; }
+      .result-section-header { cursor: default; pointer-events: none; }
+
+      /* Keep each result section on one page — no mid-section breaks */
+      .result-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 6px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      /* TMP Diagram always starts on its own page */
+      #sec-diagram {
+        break-before: page;
+        page-break-before: always;
+      }
+
+      /* Diagram SVG: width 100%, height auto so it scales proportionally */
+      .diagram-scroll { overflow: visible; }
+      .diagram-scroll svg { width: 100% !important; height: auto !important; max-width: 100%; }
+
+      .calc-btn { display: none !important; }
+
+      /* Footer on its own page */
+      footer { break-before: page; page-break-before: always; font-size: 8pt; }
+
+      /* Ensure colored elements print correctly */
+      .result-hero { background: #1a365d !important; color: white !important; }
+      .rtable th { background: #1a365d !important; color: white !important; }
+      .sign-row.header { background: #1a365d !important; color: white !important; }
+      .result-section-header { background: #f7fafc !important; }
+      .kv-row:nth-child(even) { background: #f7fafc !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap">
+    <div style="background:#fff;border-radius:10px;padding:6px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.18)">
+      <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+        <rect width="38" height="38" rx="6" fill="#1a2a4a"/>
+        <polygon points="19,4 34,30 4,30" fill="#f97316" opacity="0.95"/>
+        <text x="19" y="28" text-anchor="middle" font-size="13" font-weight="900" fill="#fff" font-family="Arial,sans-serif">E</text>
+      </svg>
+      <div style="text-align:left;line-height:1.2">
+        <div style="font-size:.95rem;font-weight:900;color:#1a2a4a;letter-spacing:-.01em">EPSICON</div>
+        <div style="font-size:.65rem;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em">Traffic Management</div>
+      </div>
+    </div>
+    <div>
+      <h1>Traffic Management Calculator</h1>
+      <p>End of Queue &bull; Taper Lengths &bull; Sign Spacings &bull; Sight Distances</p>
+    </div>
+  </div>
+  <div class="header-badges" id="headerBadges" style="margin-top:12px">
+    <span class="badge">Select a state to begin</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════
+     STEP 1 — STATE, WORKS TYPE, ROAD CATEGORY
+════════════════════════════════════════════════════════ -->
+<div class="card" id="card1">
+  <div class="card-title"><span class="step-num">1</span>State / Territory &amp; Job Setup</div>
+
+  <div class="form-group">
+    <label for="stateSelect">State or Territory</label>
+    <select id="stateSelect" onchange="selState(this.value)">
+      <option value="">-- Select State or Territory --</option>
+      <option value="VIC">VIC — Victoria</option>
+      <option value="SA">SA — South Australia</option>
+      <option value="TAS">TAS — Tasmania</option>
+      <option value="NT">NT — Northern Territory</option>
+      <option value="ACT">ACT — Australian Capital Territory</option>
+      <option value="WA">WA — Western Australia</option>
+      <option value="NSW">NSW — New South Wales</option>
+      <option value="QLD">QLD — Queensland</option>
+    </select>
+  </div>
+
+  <div class="hidden" id="postStateSetup">
+    <div class="box box-info mt12" id="stateBanner" style="margin-top:18px"></div>
+
+    <div class="section-label" style="margin-top:18px">Type of Works</div>
+    <div class="radio-group" id="worksTypeGroup">
+      <label class="radio-btn works-short active" id="wt-short" onclick="selWorks(this,'short')">
+        Short Term Works<br><small style="font-weight:400">Same-day / &lt;1 shift</small>
+      </label>
+      <label class="radio-btn works-long" id="wt-long" onclick="selWorks(this,'long')">
+        Long Term Works<br><small style="font-weight:400">Multi-shift / multi-day</small>
+      </label>
+      <label class="radio-btn works-mob" id="wt-mob" onclick="selWorks(this,'mobile')">
+        Mobile Works<br><small style="font-weight:400">Moving worksite</small>
+      </label>
+    </div>
+
+    <div class="section-label" style="margin-top:20px">Road Category</div>
+    <div class="radio-group" id="roadCatGroup">
+      <label class="radio-btn active" id="rc-1" onclick="selCat(this,1)">
+        Cat 1 — Local / Council<br><small style="font-weight:400">Local roads, minor streets</small>
+      </label>
+      <label class="radio-btn" id="rc-2" onclick="selCat(this,2)">
+        Cat 2 — Arterial / State Road<br><small style="font-weight:400">Highways, state roads</small>
+      </label>
+      <label class="radio-btn" id="rc-3" onclick="selCat(this,3)">
+        Cat 3 — Freeway / Motorway<br><small style="font-weight:400">Controlled access, no signals</small>
+      </label>
+    </div>
+
+    <div class="section-label" style="margin-top:20px">Road Configuration</div>
+    <div class="radio-group" id="roadConfigGroup">
+      <label class="radio-btn active" id="rconf-undivided" onclick="selRoadConfig(this,'undivided')">
+        Single Carriageway<br><small style="font-weight:400">Undivided, 2-way traffic</small>
+      </label>
+      <label class="radio-btn" id="rconf-divided" onclick="selRoadConfig(this,'divided')">
+        Divided Road<br><small style="font-weight:400">Dual carriageway with median</small>
+      </label>
+      <label class="radio-btn" id="rconf-oneway" onclick="selRoadConfig(this,'oneway')">
+        One-way Road<br><small style="font-weight:400">Single direction only</small>
+      </label>
+      <label class="radio-btn" id="rconf-freeway" onclick="selRoadConfig(this,'freeway')">
+        Freeway / Motorway<br><small style="font-weight:400">Multi-lane, controlled access</small>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     STEP 2 — ROAD & SPEED DETAILS
+════════════════════════════════════════════════════════ -->
+<div class="card" id="card2">
+  <div class="card-title"><span class="step-num">2</span>Road &amp; Speed Details</div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Posted Speed Limit <span class="unit-hint">(km/h)</span></label>
+      <select id="postedSpeed">
+        <option value="20">20 km/h</option>
+        <option value="25">25 km/h</option>
+        <option value="30">30 km/h</option>
+        <option value="40">40 km/h</option>
+        <option value="50">50 km/h</option>
+        <option value="60" selected>60 km/h (default)</option>
+        <option value="70">70 km/h</option>
+        <option value="80">80 km/h</option>
+        <option value="90">90 km/h</option>
+        <option value="100">100 km/h</option>
+        <option value="110">110 km/h</option>
+        <option value="120">120 km/h</option>
+        <option value="130">130 km/h</option>
+      </select>
+      <div class="hint">Permanent signed speed limit before any work-zone reduction</div>
+    </div>
+    <div class="form-group">
+      <label>Work Zone / Reduced Speed <span class="unit-hint">(km/h)</span></label>
+      <select id="workSpeed">
+        <option value="">No speed reduction</option>
+        <option value="25">25 km/h</option>
+        <option value="30">30 km/h</option>
+        <option value="40" selected>40 km/h (typical work zone)</option>
+        <option value="50">50 km/h</option>
+        <option value="60">60 km/h</option>
+        <option value="70">70 km/h</option>
+        <option value="80">80 km/h</option>
+        <option value="90">90 km/h</option>
+        <option value="100">100 km/h</option>
+      </select>
+      <div class="hint">Leave as "No speed reduction" if no work zone speed applies</div>
+    </div>
+  </div>
+
+  <div class="form-row three">
+    <div class="form-group">
+      <label>Number of Lanes <span class="unit-hint">(each direction)</span></label>
+      <select id="numLanes">
+        <option value="1" selected>1 lane</option>
+        <option value="2">2 lanes</option>
+        <option value="3">3 lanes</option>
+        <option value="4">4+ lanes</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Lane Width <span class="unit-hint">(m)</span></label>
+      <input type="number" id="laneWidth" min="2.5" max="5" step="0.1" placeholder="e.g. 3.5" value="3.5">
+      <div class="hint">Standard: 3.5 m (arterial), 3.0–3.5 m (local)</div>
+      <div class="example">Example: 3.5</div>
+    </div>
+    <div class="form-group">
+      <label>Lateral Offset / Shift <span class="unit-hint">(m)</span></label>
+      <input type="number" id="lateralShift" min="0" max="20" step="0.1" placeholder="e.g. 3.5" value="3.5">
+      <div class="hint">Width traffic is shifted sideways. Usually = 1 lane width for a lane closure</div>
+      <div class="example">Example: 3.5 (single lane closure)</div>
+    </div>
+  </div>
+
+  <div class="section-label">Traffic Management Arrangement</div>
+  <div class="form-group">
+    <label>Type of Traffic Management <span class="unit-hint">(TM arrangement to be implemented)</span></label>
+    <select id="tmpType" onchange="onTmpTypeChange(this.value)">
+      <option value="shoulder">Works in Shoulder / Verge</option>
+      <option value="lane-closure">Lane Closure (Merge to Adjacent Lane)</option>
+      <option value="lane-narrow">Lane Narrowing (Reduced Width)</option>
+      <option value="shuttleflow">Shuttleflow — One Lane Two-Way</option>
+      <option value="contraflow">Contraflow (Opposing Carriageway Used)</option>
+      <option value="median">Works on Median / Central Reserve</option>
+      <option value="footpath">Works on Footpath / Nature Strip</option>
+      <option value="carpark">Car Park Occupation</option>
+      <option value="road-closure">Full Road Closure (Detour)</option>
+    </select>
+    <div class="hint">A dimensioned sample plan will be generated based on your inputs</div>
+  </div>
+  <div class="form-group">
+    <label>Work Area Length <span class="unit-hint">(m) — approximate length of the active works zone</span></label>
+    <input type="number" id="workAreaLen" min="10" max="5000" step="10" placeholder="e.g. 100" value="50">
+    <div class="hint">Distance from first worker/plant to last; leave blank to use estimated queue length</div>
+    <div class="example">Example: 100 (short works), 500 (long resurfacing), 50 (bridge repair)</div>
+  </div>
+  <div class="form-group" id="tcMethodGroup" style="display:none">
+    <label>Traffic Control Method <span class="unit-hint">(at control point)</span></label>
+    <select id="tcMethod">
+      <option value="tc">Traffic Controller (TC)</option>
+      <option value="ptl">Portable Traffic Lights (PTL)</option>
+      <option value="boom">Portable Boom Barrier</option>
+    </select>
+    <div class="hint">Applies to Shuttleflow and Contraflow arrangements requiring a control point. PTL or Portable Boom may substitute a Traffic Controller subject to site risk assessment.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     STEP 3 — TRAFFIC DATA (for EoQ, state-specific)
+════════════════════════════════════════════════════════ -->
+<div class="card" id="card3">
+  <div class="card-title"><span class="step-num">3</span>Traffic Data <span id="trafficDataState" style="font-weight:400; color:var(--gray-3); margin-left:6px;"></span></div>
+
+  <!-- VIC / SA / TAS / NT -->
+  <div id="form-vic" class="hidden">
+    <div class="formula-box">
+      <strong>Queue Formula (Table 4.3 &mdash; AGTTM / AS1742.3):</strong><br>
+      Q = (Average vehicles &times; Ma) + (Oversized vehicles &times; Mo) = Estimated queue length (m)<br>
+      Inputs must be a <strong>5-minute directional count</strong> taken at the works location.<br>
+      <span style="color:var(--gray-3);font-size:.78rem">If only hourly volume (VPH) is available: 5-min count &asymp; VPH &divide; 12 (one-way direction). Use actual counted data wherever possible.</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Average Vehicles <span class="unit-hint">(5-min count, one direction)</span></label>
+        <input type="number" id="vic-avg" min="0" step="1" placeholder="e.g. 15">
+        <div class="hint">Cars, utes, vans, light vehicles &mdash; count for 5 min in direction of travel</div>
+        <div class="example">VPH÷12 if no site count available. Example: 180 vph ÷ 12 = 15</div>
+      </div>
+      <div class="form-group">
+        <label>Oversized / Heavy Vehicles <span class="unit-hint">(5-min count)</span></label>
+        <input type="number" id="vic-ov" min="0" step="1" placeholder="e.g. 3">
+        <div class="hint">Trucks, semi-trailers, B-doubles, buses</div>
+        <div class="example">Example: 3</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Maximum Stop Time</label>
+      <select id="vic-stop">
+        <option value="2">2 minutes</option>
+        <option value="5" selected>5 minutes</option>
+        <option value="10">10 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="30">30 minutes *</option>
+      </select>
+      <div class="hint">Total time queued traffic is stopped. * 30 min is unusual — specific circumstances only</div>
+    </div>
+  </div>
+
+  <!-- WA -->
+  <div id="form-wa" class="hidden">
+    <div class="formula-box">
+      <strong>WA Method (Main Roads WA Code of Practice):</strong><br>
+      Hourly volume &divide; 60 = veh/min &rarr; &times; stop time = vehicles in queue &rarr;
+      &times; (vehicle length + 3 m gap) = queue length (m)<br>
+      Car: 5.5 m &nbsp;|&nbsp; Truck/Bus: 19 m &nbsp;|&nbsp; Road Train / B-Double: 36.5 m
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Hourly Traffic Volume <span class="unit-hint">(veh/hr)</span></label>
+        <input type="number" id="wa-hourly" min="0" placeholder="e.g. 100">
+        <div class="hint">In the direction of travel at time of works</div>
+        <div class="example">Example: 100</div>
+      </div>
+      <div class="form-group">
+        <label>Maximum Stop Time <span class="unit-hint">(minutes)</span></label>
+        <input type="number" id="wa-stop" min="1" max="120" placeholder="e.g. 5">
+        <div class="hint">Stop time + clearance time to the nearest minute</div>
+        <div class="example">Example: 5</div>
+      </div>
+    </div>
+    <div class="section-label">Vehicle Composition (%)</div>
+    <div class="form-row three">
+      <div class="form-group">
+        <label>Cars <span class="unit-hint">(%)</span></label>
+        <input type="number" id="wa-car" min="0" max="100" placeholder="e.g. 90" oninput="chkPct('wa')">
+        <div class="hint">5.5 m + 3 m gap = 8.5 m/vehicle</div>
+      </div>
+      <div class="form-group">
+        <label>Trucks / Buses <span class="unit-hint">(%)</span></label>
+        <input type="number" id="wa-truck" min="0" max="100" placeholder="e.g. 10" oninput="chkPct('wa')">
+        <div class="hint">19 m + 3 m gap = 22 m/vehicle</div>
+      </div>
+      <div class="form-group">
+        <label>Road Trains / B-Doubles <span class="unit-hint">(%)</span></label>
+        <input type="number" id="wa-rt" min="0" max="100" placeholder="e.g. 0" oninput="chkPct('wa')">
+        <div class="hint">36.5 m + 3 m gap = 39.5 m/vehicle</div>
+      </div>
+    </div>
+    <div class="box box-warn hidden" id="wa-pct-warn">Vehicle percentages must add to 100%.</div>
+  </div>
+
+  <!-- NSW -->
+  <div id="form-nsw" class="hidden">
+    <div class="formula-box">
+      <strong>NSW Method (AGTTM / TCAWS Issue 6.1):</strong><br>
+      Hourly volume &divide; 60 = veh/min &rarr; &times; stop time = vehicles in queue &rarr;
+      &times; (vehicle length + 3 m gap) = queue length (m).<br>
+      Sight distance: <strong>2D</strong> (open road, &gt;65 km/h) &nbsp;|&nbsp;
+      <strong>1.5D</strong> (built-up, &le;65 km/h). &nbsp; D = posted speed in metres.
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Hourly Traffic Volume <span class="unit-hint">(veh/hr)</span></label>
+        <input type="number" id="nsw-hourly" min="0" placeholder="e.g. 100">
+        <div class="example">Example: 100</div>
+      </div>
+      <div class="form-group">
+        <label>Maximum Stop Time <span class="unit-hint">(minutes)</span></label>
+        <input type="number" id="nsw-stop" min="1" max="120" placeholder="e.g. 5">
+        <div class="example">Example: 5</div>
+      </div>
+    </div>
+    <div class="section-label">Vehicle Composition (%)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cars / Light Vehicles <span class="unit-hint">(%)</span></label>
+        <input type="number" id="nsw-car" min="0" max="100" placeholder="e.g. 90" oninput="chkPct('nsw')">
+        <div class="hint">5.5 m + 3 m gap = 8.5 m/vehicle</div>
+      </div>
+      <div class="form-group">
+        <label>Heavy Vehicles <span class="unit-hint">(%)</span></label>
+        <input type="number" id="nsw-heavy" min="0" max="100" placeholder="e.g. 10" oninput="chkPct('nsw')">
+        <div class="hint">19 m + 3 m gap = 22 m/vehicle</div>
+      </div>
+    </div>
+    <div class="box box-warn hidden" id="nsw-pct-warn">Vehicle percentages must add to 100%.</div>
+  </div>
+
+  <!-- QLD -->
+  <div id="form-qld" class="hidden">
+    <div class="tabs">
+      <button class="tab active" onclick="setQldTab(this,'count')">5-Minute Count</button>
+      <button class="tab" onclick="setQldTab(this,'aadt-h')">AADT + Hourly</button>
+      <button class="tab" onclick="setQldTab(this,'aadt')">AADT Only</button>
+    </div>
+    <div id="qld-count">
+      <div class="formula-box">
+        <strong>QLD Formula (Table 4.3 &mdash; QGTTM):</strong><br>
+        (Average vehicles &times; Ma) + (Heavy vehicles &times; Mo) = Queue length (m).
+        Minimum: at least 1 average + 1 heavy vehicle. Part lengths rounded up.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Average Vehicles <span class="unit-hint">(5-min count)</span></label>
+          <input type="number" id="qld-avg" min="0" step="1" placeholder="e.g. 12">
+        </div>
+        <div class="form-group">
+          <label>Heavy Vehicles <span class="unit-hint">(5-min count)</span></label>
+          <input type="number" id="qld-hv" min="0" step="1" placeholder="e.g. 3">
+        </div>
+      </div>
+    </div>
+    <div id="qld-aadt-h" class="hidden">
+      <div class="formula-box"><strong>AADT with hourly:</strong> 5-min estimate = Peak hourly &divide; 12 &divide; 2 (two-way)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Peak Hourly Traffic <span class="unit-hint">(veh/hr)</span></label>
+          <input type="number" id="qld-ph" min="0" placeholder="e.g. 300">
+        </div>
+        <div class="form-group">
+          <label>Heavy Vehicle Proportion <span class="unit-hint">(%)</span></label>
+          <input type="number" id="qld-ph-hv" min="0" max="100" placeholder="e.g. 15">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Road Direction</label>
+        <select id="qld-ph-dir">
+          <option value="2">Two-way road (divide by 2 for one direction)</option>
+          <option value="1">One-way / directional count already</option>
+        </select>
+      </div>
+    </div>
+    <div id="qld-aadt" class="hidden">
+      <div class="formula-box"><strong>AADT only:</strong> 5-min estimate = AADT &divide; 10 &divide; 12 &divide; 2 (two-way)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>AADT <span class="unit-hint">(Annual Average Daily Traffic)</span></label>
+          <input type="number" id="qld-aadt-v" min="0" placeholder="e.g. 5000">
+        </div>
+        <div class="form-group">
+          <label>Heavy Vehicle Proportion <span class="unit-hint">(%)</span></label>
+          <input type="number" id="qld-aadt-hv" min="0" max="100" placeholder="e.g. 15">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Road Direction</label>
+        <select id="qld-aadt-dir">
+          <option value="2">Two-way road (divide by 2 for one direction)</option>
+          <option value="1">One-way / directional count already</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:14px">
+      <div class="form-group">
+        <label>Maximum Stop Time</label>
+        <select id="qld-stop">
+          <option value="2">2 minutes</option>
+          <option value="5" selected>5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="30">30 minutes *</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calculate -->
+<div class="card" id="calcCard">
+  <button class="calc-btn" onclick="calculate()">&#9654;&nbsp; Calculate All Outputs</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     RESULTS
+════════════════════════════════════════════════════════ -->
+<div class="hidden" id="resultsArea">
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="background:var(--blue-dark);color:#fff;padding:16px 24px;font-weight:800;font-size:1rem;display:flex;align-items:center;gap:8px;">
+      <span>&#9660;</span> Calculation Results
+    </div>
+    <div id="calcSummaryBar" style="background:#ebf8ff;color:#2c5282;padding:10px 20px;font-size:.83rem;border-bottom:1px solid #bee3f8;display:none;"></div>
+
+    <!-- EoQ -->
+    <div class="result-section" id="sec-eoq">
+      <div class="result-section-header open" onclick="toggleSec('sec-eoq')">
+        <span>&#128200; End of Queue (EoQ)</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-eoq"></div>
+    </div>
+
+    <!-- Taper Lengths -->
+    <div class="result-section" id="sec-taper">
+      <div class="result-section-header open" onclick="toggleSec('sec-taper')">
+        <span>&#128200; Taper Lengths</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-taper"></div>
+    </div>
+
+    <!-- Sight Distances -->
+    <div class="result-section" id="sec-sight">
+      <div class="result-section-header open" onclick="toggleSec('sec-sight')">
+        <span>&#128200; Sight Distances</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-sight"></div>
+    </div>
+
+    <!-- Sign Spacing & Layout -->
+    <div class="result-section" id="sec-signs">
+      <div class="result-section-header open" onclick="toggleSec('sec-signs')">
+        <span>&#128200; Sign Spacing &amp; Layout</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-signs"></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="result-section" id="sec-summary">
+      <div class="result-section-header open" onclick="toggleSec('sec-summary')">
+        <span>&#128200; Key Dimensions Summary</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-summary"></div>
+    </div>
+
+    <!-- TMP Diagram -->
+    <div class="result-section" id="sec-diagram">
+      <div class="result-section-header open" onclick="toggleSec('sec-diagram')">
+        <span>&#128230; Sample Traffic Management Plan</span><span class="chevron open">&#9654;</span>
+      </div>
+      <div class="result-section-body open" id="body-diagram"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Print-only job details card: hidden on screen, shown in @media print -->
+<div id="printJobCard" style="display:none;" class="card">
+  <div class="card-title" style="font-size:.95rem; border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">Job Details</div>
+  <div id="printJobContent"></div>
+  <p style="font-size:.74rem;color:#718096;margin-top:10px;font-style:italic;">Generated: <span id="printDateTime"></span> &nbsp;&bull;&nbsp; This calculation is a guide only — verify all values on site with a competent person.</p>
+</div>
+
+</div><!-- /container -->
+
+<div class="container" id="pdfBar" style="display:none; margin-bottom:16px;">
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+    <button class="pdf-btn" onclick="doPrint()">&#128438; Save / Print as PDF</button>
+    <button class="pdf-btn share-btn" onclick="doShare()">&#8679; Share Results</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Traffic Management Calculator</strong><br>
+  <strong>Disclaimer:</strong> This tool is a guide only. All outputs must be verified against the current
+  edition of the applicable state regulations and by a competent person. Site-specific conditions
+  (alignment, sight restrictions, road surface, gradient, etc.) may require different values.
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ═══════════════ DATA TABLES ═══════════════════════════════════════════════════
+
+// Table 4.3 — Queue length multipliers (VIC/SA/TAS/NT/QLD per AS1742.3)
+const MA = {2:2.4, 5:6, 10:12, 15:18, 30:36};
+const MO = {2:8,   5:20, 10:40, 15:60, 30:120};
+
+// Stopping Sight Distance (m) — Austroads Guide to Road Design Part 3 / AS1742.3
+const SSD_TBL = {30:30, 40:40, 50:65, 60:85, 70:110, 80:130, 90:160, 100:185, 110:220};
+
+// Minimum merge/approach taper length (m) — AS1742.3 (NSW/QLD/WA)
+const TAPER_MIN = {40:30, 50:45, 60:60, 70:80, 80:160, 90:200, 100:240, 110:280};
+
+// Longitudinal clearance (buffer) — AS1742.3 (NSW/QLD/WA)
+const BUFFER_TBL = {40:10, 50:15, 60:20, 70:30, 80:50, 90:75, 100:100, 110:120};
+
+// ── AGTTM Table 5.7 — Recommended Taper Lengths (m) — VIC/SA/TAS/NT/ACT ───────
+// Columns: [maxSpeed, TC taper, Lateral-shift taper, Merge taper]
+// TC taper null = N/A for that speed range
+const AGTTM_T57 = [
+  [45,  15,   5,  15],
+  [55,  15,  15,  30],
+  [65,  30,  30,  60],
+  [75,  null, 70, 115],
+  [85,  null, 80, 130],
+  [95,  null, 90, 145],
+  [105, null,100, 160],
+  [999, null,110, 180],
+];
+
+// AGTTM Table 5.8 — Longitudinal buffer zone / distance between tapers (m)
+function agttmBuf(spd) {
+  if (spd <= 45) return 10;
+  if (spd <= 55) return 30;
+  if (spd <= 65) return 60;
+  return Math.round(1.5 * spd); // 70→105, 80→120, 90→135, 100→150, 110→165
+}
+
+function agttmRow(spd) {
+  return AGTTM_T57.find(r => spd <= r[0]) || AGTTM_T57[AGTTM_T57.length-1];
+}
+// Merge taper (Table 5.7 col 4)
+function agttmMergeTaper(spd) { return agttmRow(spd)[3]; }
+// Traffic control taper (Table 5.7 col 2); null = N/A for speeds > 65 km/h
+function agttmTCTaper(spd)    { return agttmRow(spd)[1]; }
+// Lateral-shift taper (Table 5.7 col 3)
+function agttmLSTaper(spd)    { return agttmRow(spd)[2]; }
+// Speed range label for display
+function agttmSpeedRange(spd) {
+  const r = agttmRow(spd);
+  const prev = AGTTM_T57[AGTTM_T57.indexOf(r)-1];
+  if (!prev) return '≤ 45 km/h';
+  if (r[0] === 999) return '≥ 106 km/h';
+  return `${prev[0]+1}–${r[0]} km/h`;
+}
+
+// AGTTM Sign Spacing (m) — advance warning sign intervals, AGTTM04-21 / AS1742.3
+// Confirmed: 60 km/h → 45 m; 80 km/h → 80 m; 100 km/h → 125 m
+const AGTTM_SP = {30:25, 40:30, 50:40, 60:45, 75:60, 85:80, 95:100, 105:125, 999:150};
+function agttmSp(spd) {
+  var keys = Object.keys(AGTTM_SP).map(Number).sort(function(a,b){return a-b;});
+  for (var i=0;i<keys.length;i++) if (spd<=keys[i]) return AGTTM_SP[keys[i]];
+  return 150;
+}
+
+// Advance warning sign spacing (m) minimum — AS1742.3 Table 3.3 / AGTTM04 / state guides
+// Index 0=Cat1, 1=Cat2, 2=Cat3
+const SIGN_SP_TBL = {
+  40: [30, 40,  null],
+  50: [40, 50,  null],
+  60: [60, 75,  100],
+  70: [75, 90,  120],
+  80: [100,120, 180],
+  90: [120,150, 200],
+  100:[150,180, 250],
+  110:[180,220, 300],
+};
+
+// Sign names by state (approach side)
+const SIGNS = {
+  NSW: {
+    roadworkAhead:  'ROAD WORK AHEAD (T1-1)',
+    endRoadwork:    'END ROAD WORK (T1-2)',
+    laneClosed:     'LANE CLOSED (T2-4 / T2-5)',
+    mergeSign:      'MERGE sign (T2-11 / T2-12)',
+    prepareStop:    'PREPARE TO STOP (T1-18B)',
+    trafficCtrl:    'TRAFFIC CONTROLLER AHEAD (W3-7)',
+    speedLimit:     'SPEED LIMIT sign',
+    arrowBoard:     'Truck-mounted arrow board / attenuator',
+  },
+  QLD: {
+    roadworkAhead:  'ROADWORK AHEAD (TM1-1)',
+    endRoadwork:    'END ROADWORK (TM1-2)',
+    laneClosed:     'LANE CLOSED AHEAD',
+    mergeSign:      'MERGE sign',
+    prepareStop:    'PREPARE TO STOP (TM1-14)',
+    trafficCtrl:    'TRAFFIC CONTROLLER AHEAD',
+    speedLimit:     'SPEED LIMIT sign',
+    arrowBoard:     'Arrow board / attenuator',
+  },
+  WA: {
+    roadworkAhead:  'ROAD WORK AHEAD',
+    endRoadwork:    'END ROAD WORK',
+    laneClosed:     'LANE CLOSED AHEAD',
+    mergeSign:      'MERGE sign',
+    prepareStop:    'PREPARE TO STOP (T1-18B)',
+    trafficCtrl:    'TRAFFIC CONTROLLER AHEAD',
+    speedLimit:     'SPEED LIMIT sign',
+    arrowBoard:     'Truck-mounted arrow board / attenuator',
+  },
+  DEFAULT: {
+    roadworkAhead:  'ROAD WORK AHEAD',
+    endRoadwork:    'END ROAD WORK',
+    laneClosed:     'LANE CLOSED AHEAD',
+    mergeSign:      'MERGE sign',
+    prepareStop:    'PREPARE TO STOP',
+    trafficCtrl:    'TRAFFIC CONTROLLER AHEAD',
+    speedLimit:     'SPEED LIMIT sign',
+    arrowBoard:     'Arrow board / attenuator',
+  }
+};
+// ACT uses DEFAULT signs (generic Australian standards)
+SIGNS.ACT = SIGNS.DEFAULT;
+
+// ═══════════════ STATE ══════════════════════════════════════════════════════════
+
+let state      = null;
+let works      = 'short';
+let roadCat    = 1;
+let qldMode    = 'count';
+let roadConfig = 'undivided';
+
+
+// ═══════════════ UI HELPERS ════════════════════════════════════════════════════
+
+// State-specific reference info shown in banner + header badges
+const STATE_INFO = {
+  VIC: {
+    name: 'Victoria',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard for traffic control devices at works on roads. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  SA:  {
+    name: 'South Australia',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  TAS: {
+    name: 'Tasmania',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  NT:  {
+    name: 'Northern Territory',
+    badges: ['AS1742.3', 'Table 4.3'],
+    refs:  'AS1742.3-2019 &mdash; the national standard. Queue length calculated using Table 4.3 multiplier method.',
+  },
+  ACT: {
+    name: 'Australian Capital Territory',
+    badges: ['AGTTM03-21', 'AGTTM04-21', 'AGTTM05-21', 'AS1742.3'],
+    refs: 'AGTTM03-21, AGTTM04-21 &amp; AGTTM05-21 (Austroads Guide to Temporary Traffic Management) and AS1742.3-2019. Queue length calculated using Table 4.3 multiplier method. Administered by ACT Government Transport Canberra and City Services (TCCS).',
+  },
+  WA:  {
+    name: 'Western Australia',
+    badges: ['WA Code of Practice', 'AS1742.3'],
+    refs:  'WA Code of Practice for Traffic Management for Works on Roads &mdash; Main Roads WA method using hourly volume &times; stop time &times; vehicle length.',
+  },
+  NSW: {
+    name: 'New South Wales',
+    badges: ['AGTTM03-21', 'AGTTM04-21', 'AGTTM05-21', 'TCAWS 6.1'],
+    refs:  'AGTTM03-21, AGTTM04-21 &amp; AGTTM05-21 (Austroads Guide to Temporary Traffic Management) and TCAWS Issue 6.1 (Transport for NSW) &mdash; volume-based queue method with 2D / 1.5D sight distance rule.',
+  },
+  QLD: {
+    name: 'Queensland',
+    badges: ['QGTTM03', 'QGTTM04', 'QGTTM05', 'Table 4.3'],
+    refs:  'QGTTM03, QGTTM04 &amp; QGTTM05 (Queensland Guide to Temporary Traffic Management, TMR Nov 2025) &mdash; Table 4.3 multiplier method with optional AADT fallback.',
+  },
+};
+
+function selState(s) {
+  state = s;
+
+  // Update header badges to show only the selected state's references
+  const info = STATE_INFO[s];
+  document.getElementById('headerBadges').innerHTML =
+    `<span class="badge"><strong>${info.name}</strong></span>` +
+    info.badges.map(b => `<span class="badge">${b}</span>`).join('');
+
+  // Show state-specific banner under state selection
+  document.getElementById('stateBanner').innerHTML =
+    `<strong>${info.name}:</strong> ${info.refs}`;
+  show('postStateSetup');
+
+  // Update traffic-data card heading
+  document.getElementById('trafficDataState').textContent = '— ' + info.name;
+
+  // Show only the relevant traffic-data form
+  ['vic','wa','nsw','qld'].forEach(id => hide('form-' + id));
+  if (['VIC','SA','TAS','NT','ACT'].includes(s)) show('form-vic');
+  else if (s === 'WA')  show('form-wa');
+  else if (s === 'NSW') show('form-nsw');
+  else if (s === 'QLD') show('form-qld');
+
+  hide('resultsArea');
+}
+
+function selWorks(btn, w) {
+  works = w;
+  document.querySelectorAll('#worksTypeGroup .radio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selCat(btn, c) {
+  roadCat = c;
+  document.querySelectorAll('#roadCatGroup .radio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selRoadConfig(btn, cfg) {
+  roadConfig = cfg;
+  document.querySelectorAll('#roadConfigGroup .radio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateTmpOptions();
+}
+
+function updateTmpOptions() {
+  const allOpts = {
+    'shoulder':      'Works in Shoulder / Verge',
+    'lane-closure':  'Lane Closure (Merge to Adjacent Lane)',
+    'lane-narrow':   'Lane Narrowing (Reduced Width)',
+    'shuttleflow':   'Shuttleflow — One Lane Two-Way',
+    'contraflow':    'Contraflow (Opposing Carriageway Used)',
+    'median':        'Works on Median / Central Reserve',
+    'footpath':      'Works on Footpath / Nature Strip',
+    'carpark':       'Car Park Occupation',
+    'road-closure':  'Full Road Closure (Detour)',
+  };
+  // Which options are valid per road config
+  const validByConfig = {
+    undivided: ['shoulder','lane-closure','lane-narrow','shuttleflow','footpath','carpark','road-closure'],
+    divided:   ['shoulder','lane-closure','lane-narrow','contraflow','median'],
+    oneway:    ['shoulder','lane-closure','lane-narrow','footpath','carpark'],
+    freeway:   ['shoulder','lane-closure','contraflow','median'],
+  };
+  const valid = validByConfig[roadConfig] || Object.keys(allOpts);
+  const sel = document.getElementById('tmpType');
+  const cur = sel.value;
+  sel.innerHTML = valid.map(v =>
+    `<option value="${v}"${v===cur?' selected':''}>${allOpts[v]}</option>`
+  ).join('');
+  // If current selection no longer valid, pick first
+  if (!valid.includes(cur)) sel.value = valid[0];
+  onTmpTypeChange(sel.value);
+}
+
+function setQldTab(btn, mode) {
+  qldMode = mode;
+  document.querySelectorAll('#form-qld .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['count','aadt-h','aadt'].forEach(id => hide('qld-' + id));
+  show('qld-' + mode);
+}
+
+function toggleSec(id) {
+  const sec  = document.getElementById(id);
+  const hdr  = sec.querySelector('.result-section-header');
+  const body = sec.querySelector('.result-section-body');
+  const chev = sec.querySelector('.chevron');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  hdr.classList.toggle('open', !open);
+  chev.classList.toggle('open', !open);
+}
+
+function chkPct(s) {
+  let tot = 0, warnId;
+  if (s === 'wa') {
+    tot = n('wa-car') + n('wa-truck') + n('wa-rt');
+    warnId = 'wa-pct-warn';
+  } else {
+    tot = n('nsw-car') + n('nsw-heavy');
+    warnId = 'nsw-pct-warn';
+  }
+  document.getElementById(warnId).classList.toggle('hidden', !(tot > 0 && Math.abs(tot - 100) > 0.5));
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function n(id)    { return parseFloat(document.getElementById(id).value); }
+function v(id)    { return document.getElementById(id).value; }
+
+// ═══════════════ CALCULATION HELPERS ═════════════════════════════════════════════
+
+// Round speed UP to nearest standard value for table lookups
+function stdSpeed(spd) {
+  const steps = [40,50,60,70,80,90,100,110];
+  return steps.find(s => s >= spd) || 110;
+}
+
+// Interpolate SSD from table
+function getSSD(spd) {
+  if (spd <= 30) return 30;
+  if (spd >= 110) return 220;
+  const lo = [30,40,50,60,70,80,90,100].filter(k => k <= spd).pop();
+  const hi = [40,50,60,70,80,90,100,110].find(k => k > spd);
+  const t  = (spd - lo) / (hi - lo);
+  return Math.round(SSD_TBL[lo] + t * (SSD_TBL[hi] - SSD_TBL[lo]));
+}
+
+// Buffer zone at given speed — AGTTM states use Table 5.8, others use AS1742.3
+function getBuffer(spd) {
+  if (state && ['VIC','SA','TAS','NT','ACT'].includes(state)) return agttmBuf(spd);
+  const s = stdSpeed(spd);
+  return BUFFER_TBL[s] || 120;
+}
+
+// Merge taper length (m): formula + minimum check
+function mergeTaper(spd, W) {
+  const w = W || 3.5;
+  let L;
+  if (spd <= 70) {
+    L = (w * spd * spd) / 155;
+  } else {
+    L = w * spd;
+  }
+  const minL = TAPER_MIN[stdSpeed(spd)] || 280;
+  return Math.ceil(Math.max(L, minL));
+}
+
+// Sign spacing (m) for given speed and road category
+function signSpacing(spd, cat) {
+  const s = stdSpeed(spd);
+  const row = SIGN_SP_TBL[s] || [180, 220, 300];
+  return row[cat - 1] || row[1];
+}
+
+// D dimension (m) for end-of-queue sign placement
+function dimD(spd, st) {
+  if (st === 'WA') {
+    if (spd <= 55) return 15;
+    if (spd <= 65) return 45;
+    return spd;
+  }
+  if (st === 'QLD') {
+    // QGTTM Table 4.4(b)
+    if (spd <= 55) return 30;
+    if (spd <= 65) return 90;
+    if (spd <= 75) return 140;
+    if (spd <= 85) return 240;
+    return 4 * spd;
+  }
+  // NSW & others: D = posted speed (m) per TCAWS / AS1742.3
+  if (spd <= 50) return 50;
+  if (spd <= 60) return 60;
+  return spd;
+}
+
+// QLD Table 4.4(a): max repeater PREPARE TO STOP spacing
+function qldRepeaterSpacing(spd) { return spd <= 55 ? 60 : 180; }
+
+// QLD Table 4.4(b): min dist ROADWORK AHEAD → primary PREPARE TO STOP
+function qldSignDist(spd) {
+  if (spd <= 55) return 30;
+  if (spd <= 65) return 90;
+  if (spd <= 75) return 140;
+  if (spd <= 85) return 240;
+  return 4 * spd;
+}
+
+// Signs dictionary for current state
+function sgn() { return SIGNS[state] || SIGNS.DEFAULT; }
+
+// Format distance
+function m(v) { return Math.round(v) + ' m'; }
+
+// HTML helpers
+function kv(key, val, cls='') {
+  return `<div class="kv-row"><span class="kv-key">${key}</span><span class="kv-val ${cls}">${val}</span></div>`;
+}
+function hero(val) {
+  return `<div class="result-hero">
+    <div class="hero-label">Estimated Queue Length</div>
+    <div class="hero-value">${Math.round(val)}</div>
+    <div class="hero-unit">metres</div>
+  </div>`;
+}
+
+// ═══════════════ EoQ CALCULATIONS ════════════════════════════════════════════════
+
+function eoqVic(vPosted, env) {
+  const avg  = n('vic-avg');
+  const ov   = n('vic-ov');
+  const stop = parseInt(v('vic-stop'));
+  if (isNaN(avg) || isNaN(ov)) return null;
+  const ma = MA[stop], mo = MO[stop];
+  const Q  = (avg * ma) + (ov * mo);
+  const sdMult = env === 'open' ? 2 : 1.5;
+  const sd = isNaN(vPosted) ? null : sdMult * vPosted;
+  let html = hero(Q);
+  html += `<div class="kv-list">
+    ${kv('State / Regulation', state + ' — Table 4.3 (AS1742.3)')}
+    ${kv('Average vehicles (5-min count)', avg)}
+    ${kv('Oversized / Heavy vehicles (5-min count)', ov)}
+    ${kv('Maximum stop time', stop + ' min')}
+    ${kv('Multiplier Ma (average)', ma)}
+    ${kv('Multiplier Mo (oversized)', mo)}
+    ${kv('Average vehicles contribution', avg + ' × ' + ma + ' = <strong>' + (avg*ma) + ' m</strong>')}
+    ${kv('Oversized vehicles contribution', ov + ' × ' + mo + ' = <strong>' + (ov*mo) + ' m</strong>')}
+    ${kv('Estimated queue length', '<strong>' + Q + ' m</strong>')}
+  </div>`;
+  if (sd !== null) {
+    const env2 = env === 'open' ? 'open road' : 'built-up area';
+    const over = !isNaN(vPosted) && vPosted > 70;
+    if (over) html += `<div class="box box-warn mt12">Speed &gt; 70 km/h: elevated collision risk if sight distance to end of queue is less than ${sd} m.</div>`;
+    html += `<div class="box box-info mt12">Required sight distance to end of queue: <strong>${sd} m</strong> (${sdMult} × ${vPosted} km/h — ${env2}). Verify PREPARE TO STOP sign visibility before commencing works.</div>`;
+  }
+  html += `<div class="box box-amber mt12"><strong>Note:</strong> If accurate traffic count data is available, use it. If unsure of stop time or which multiplier to use, seek advice from a competent person or the relevant road authority.</div>`;
+  return { Q, html };
+}
+
+function eoqWA(vPosted) {
+  const hourly = n('wa-hourly'), stop = n('wa-stop');
+  const pCar   = n('wa-car') || 0;
+  const pTruck = n('wa-truck') || 0;
+  const pRT    = n('wa-rt')   || 0;
+  if (isNaN(hourly) || isNaN(stop)) return null;
+  if ((pCar+pTruck+pRT) > 0 && Math.abs(pCar+pTruck+pRT - 100) > 1) {
+    alert('Vehicle percentages must add to 100%.'); return null;
+  }
+  const vpm   = hourly / 60;
+  const total = vpm * stop;
+  const nC = total * pCar/100, nT = total * pTruck/100, nR = total * pRT/100;
+  const Q = nC*8.5 + nT*22 + nR*39.5;
+  const D    = isNaN(vPosted) ? null : dimD(vPosted, 'WA');
+  const fourD = D ? 4*D : null;
+  let html = hero(Q);
+  html += `<div class="kv-list">
+    ${kv('State / Regulation', 'WA — Main Roads WA Code of Practice')}
+    ${kv('Hourly traffic volume', hourly + ' veh/hr')}
+    ${kv('Vehicles per minute', vpm.toFixed(2) + ' veh/min (' + hourly + ' ÷ 60)')}
+    ${kv('Maximum stop time', stop + ' min')}
+    ${kv('Total vehicles in queue', total.toFixed(1) + ' veh')}
+    ${kv('Cars (' + pCar + '%)', nC.toFixed(1) + ' × 8.5 m = <strong>' + nC.toFixed(1)*8.5 + ' m</strong>')}
+    ${kv('Trucks/Buses (' + pTruck + '%)', nT.toFixed(1) + ' × 22 m = <strong>' + (nT*22).toFixed(1) + ' m</strong>')}
+    ${kv('Road Trains/B-Doubles (' + pRT + '%)', nR.toFixed(1) + ' × 39.5 m = <strong>' + (nR*39.5).toFixed(1) + ' m</strong>')}
+    ${kv('Estimated queue length', '<strong>' + Q.toFixed(1) + ' m</strong>')}
+  </div>`;
+  if (D !== null) {
+    const over4D = Q > fourD;
+    html += `<div class="kv-list mt12">
+      ${kv('Dimension D', D + ' m')}
+      ${kv('Primary PREPARE TO STOP sign (min from end of queue)', '2D = ' + (2*D) + ' m')}
+      ${kv('Minimum sight distance to end of queue', '2D = ' + (2*D) + ' m')}
+      ${kv('4D threshold', fourD + ' m')}
+      ${kv('Queue vs 4D', Math.round(Q) + ' m vs ' + fourD + ' m', over4D ? 'warn' : 'ok')}
+    </div>`;
+    html += over4D
+      ? `<div class="box box-warn mt12">Predicted queue (${Math.round(Q)} m) exceeds 4D (${fourD} m). Install additional PREPARE TO STOP sign at predicted end of queue — Figure 2 layout.</div>`
+      : `<div class="box box-ok mt12">Predicted queue (${Math.round(Q)} m) is within 4D (${fourD} m). Figure 1 standard layout applies.</div>`;
+  }
+  return { Q, html };
+}
+
+function eoqNSW(vPosted, env) {
+  const hourly = n('nsw-hourly'), stop = n('nsw-stop');
+  const pCar   = n('nsw-car')   || 0;
+  const pHeavy = n('nsw-heavy') || 0;
+  if (isNaN(hourly) || isNaN(stop)) return null;
+  const vpm   = hourly / 60;
+  const total = vpm * stop;
+  const nC = total * pCar/100, nH = total * pHeavy/100;
+  const Q  = nC*8.5 + nH*22;
+  const D    = isNaN(vPosted) ? null : vPosted;
+  const sdMult = env === 'open' ? 2 : 1.5;
+  const sd   = D ? sdMult*D : null;
+  let html = hero(Q);
+  html += `<div class="kv-list">
+    ${kv('State / Regulation', 'NSW — AGTTM04-21 / TCAWS Issue 6.1')}
+    ${kv('Hourly traffic volume', hourly + ' veh/hr')}
+    ${kv('Vehicles per minute', vpm.toFixed(2) + ' veh/min')}
+    ${kv('Maximum stop time', stop + ' min')}
+    ${kv('Total vehicles in queue', total.toFixed(1) + ' veh')}
+    ${kv('Cars/Light (' + pCar + '%)', nC.toFixed(1) + ' × 8.5 m = <strong>' + (nC*8.5).toFixed(1) + ' m</strong>')}
+    ${kv('Heavy (' + pHeavy + '%)', nH.toFixed(1) + ' × 22 m = <strong>' + (nH*22).toFixed(1) + ' m</strong>')}
+    ${kv('Estimated queue length', '<strong>' + Q.toFixed(1) + ' m</strong>')}
+  </div>`;
+  if (D !== null) {
+    const fourD = 4*D;
+    const over4D = Q > fourD;
+    const envLabel = env === 'open' ? 'open road, >65 km/h' : 'built-up, ≤65 km/h';
+    html += `<div class="kv-list mt12">
+      ${kv('Dimension D (= posted speed)', D + ' m')}
+      ${kv('Required sight distance (' + envLabel + ')', sdMult + 'D = ' + sd + ' m')}
+      ${kv('Primary PREPARE TO STOP (min from end of queue)', 'D = ' + D + ' m')}
+      ${kv('4D threshold', fourD + ' m')}
+      ${kv('Queue vs 4D', Math.round(Q) + ' m vs ' + fourD + ' m', over4D ? 'warn' : 'ok')}
+    </div>`;
+    html += over4D
+      ? `<div class="box box-warn mt12">Queue (${Math.round(Q)} m) exceeds 4D (${fourD} m). Install repeater PREPARE TO STOP (B-size) signs at max ${fourD} m intervals between primary sign and control point.</div>`
+      : `<div class="box box-ok mt12">Queue (${Math.round(Q)} m) is within 4D (${fourD} m). Standard PREPARE TO STOP sign placement applies.</div>`;
+    html += `<div class="box box-info mt12">Traffic queues must be monitored at all times (TCAWS 4.6.3). Primary PREPARE TO STOP sign should be B-size when placed ahead of end of queue.</div>`;
+  }
+  return { Q, html };
+}
+
+function eoqQLD() {
+  const stop = parseInt(v('qld-stop'));
+  const ma = MA[stop], mo = MO[stop];
+  let avgV, hvV, dataSource;
+  if (qldMode === 'count') {
+    avgV = n('qld-avg'); hvV = n('qld-hv');
+    if (isNaN(avgV) || isNaN(hvV)) return null;
+    dataSource = 'Direct 5-minute count';
+  } else if (qldMode === 'aadt-h') {
+    const ph = n('qld-ph'), phHV = n('qld-ph-hv') || 0;
+    const dir = parseInt(v('qld-ph-dir'));
+    if (isNaN(ph)) return null;
+    let fm = ph / 12 / dir;
+    hvV = fm * phHV/100; avgV = fm - hvV;
+    dataSource = `AADT+hourly — ${ph} veh/hr peak${dir===2?', ÷2 direction':''}`;
+  } else {
+    const aadt = n('qld-aadt-v'), aHV = n('qld-aadt-hv') || 0;
+    const dir  = parseInt(v('qld-aadt-dir'));
+    if (isNaN(aadt)) return null;
+    let fm = aadt / 10 / 12 / dir;
+    hvV = fm * aHV/100; avgV = fm - hvV;
+    dataSource = `AADT only — ${aadt} AADT${dir===2?', ÷2 direction':''}`;
+  }
+  avgV = Math.max(Math.ceil(avgV), 1);
+  hvV  = Math.max(Math.ceil(hvV),  1);
+  const Q = (avgV * ma) + (hvV * mo);
+  const vPosted = n('postedSpeed');
+  let html = hero(Q);
+  html += `<div class="kv-list">
+    ${kv('State / Regulation', 'QLD — QGTTM Table 4.3 (TMR Nov 2025)')}
+    ${kv('Data source', dataSource)}
+    ${kv('Average vehicles (5-min equiv., ≥1, rounded up)', avgV)}
+    ${kv('Heavy vehicles (5-min equiv., ≥1, rounded up)', hvV)}
+    ${kv('Maximum stop time', stop + ' min')}
+    ${kv('Multiplier Ma (average)', ma)}
+    ${kv('Multiplier Mo (heavy)', mo)}
+    ${kv('Average contribution', avgV + ' × ' + ma + ' = <strong>' + (avgV*ma) + ' m</strong>')}
+    ${kv('Heavy contribution', hvV + ' × ' + mo + ' = <strong>' + (hvV*mo) + ' m</strong>')}
+    ${kv('Estimated queue length', '<strong>' + Q + ' m</strong>')}
+  </div>`;
+  if (!isNaN(vPosted)) {
+    const minDist  = qldSignDist(vPosted);
+    const repeater = qldRepeaterSpacing(vPosted);
+    html += `<div class="kv-list mt12">
+      ${kv('Permanent posted speed', vPosted + ' km/h')}
+      ${kv('Min. ROADWORK AHEAD → primary PREPARE TO STOP (Table 4.4b)', minDist + ' m')}
+      ${kv('Max. repeater PREPARE TO STOP spacing (Table 4.4a)', repeater + ' m')}
+    </div>`;
+  }
+  html += `<div class="box box-info mt12">QLD minimum queue = at least 1 average + 1 heavy vehicle. Part vehicle lengths rounded up. For routes with very long vehicles (outback/mining), use actual vehicle mix lengths.</div>`;
+  return { Q, html };
+}
+
+// ═══════════════ TAPER LENGTHS ════════════════════════════════════════════════
+
+function calcTapers(vPosted, vWork, W, closureType) {
+  const vApp = vPosted;
+  const w    = W || 3.5;
+  const useAGTTM = ['VIC','SA','TAS','NT','ACT'].includes(state);
+
+  let mt, ct, tt, html = '';
+
+  if (closureType === 'mobile') {
+    html += `<div class="box box-info">Mobile works: no fixed taper required. Shadow vehicle arrangement applies (see Sign Layout section).</div>`;
+    return { mt: 0, ct: 0, tt: 0, html };
+  }
+
+  if (useAGTTM) {
+    // ── AGTTM Table 5.7 ──────────────────────────────────────────────────
+    mt = agttmMergeTaper(vApp);
+    const tcRaw = agttmTCTaper(vApp);   // null = N/A for speeds > 65 km/h
+    ct = tcRaw !== null ? tcRaw : mt;   // use merge taper for SVG geometry only when TC N/A
+    tt = agttmLSTaper(vApp);
+    const range = agttmSpeedRange(vApp);
+    const buf   = agttmBuf(vApp);
+
+    html += `<div class="box box-info mb12">
+      <strong>AGTTM Table 5.7</strong> — Speed range: ${range}<br>
+      Taper lengths based on 3.5 m lane width (median speed of range).
+    </div>`;
+    html += `<div class="kv-list">
+      ${kv('Speed range (Table 5.7)', range)}
+      ${kv('Merge taper (approach)', mt + ' m')}
+      ${kv('Traffic control taper (Table 5.7)', tcRaw !== null ? tcRaw + ' m' : 'N/A — not applicable above 65 km/h')}
+      ${kv('Lateral shift taper (Table 5.7)', tt + ' m')}
+      ${kv('Distance between tapers (Table 5.8)', buf + ' m' + (vApp > 65 ? ' (= 1.5 × ' + vApp + ' km/h)' : ''))}
+    </div>`;
+    html += `<div style="margin-top:16px">
+    <table class="rtable">
+      <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Merge Taper</strong></td><td>${mt} m</td><td>Approach side — traffic merges into adjacent lane</td></tr>
+        <tr><td>Traffic Control Taper</td><td>${tcRaw !== null ? tcRaw + ' m' : 'N/A'}</td><td>${tcRaw !== null ? 'At traffic controller / PTL / boom position' : 'Not applicable — TC taper cannot be used above 65 km/h'}</td></tr>
+        <tr><td>Lateral Shift Taper</td><td>${tt} m</td><td>Lateral deviation — both ends of shift</td></tr>
+        <tr><td>Distance Between Tapers (buffer)</td><td>${buf} m</td><td>Separation between successive tapers (Table 5.8)</td></tr>
+      </tbody>
+    </table></div>`;
+    if (tcRaw === null) {
+      html += `<div class="box box-warn mt12"><strong>Traffic Control Taper N/A:</strong> At speeds above 65 km/h, traffic control tapers are not applicable per AGTTM Table 5.7. Use the merge taper (${mt} m) for the approach taper. Confirm arrangements with a competent person.</div>`;
+    }
+    html += `<p class="ref-note mt12">Reference: AGTTM04-21 Tables 5.7 &amp; 5.8 — ${STATE_INFO[state]?.name}. Verify against current edition.</p>`;
+
+  } else {
+    // ── AS1742.3 formula (NSW / QLD / WA) ────────────────────────────────
+    mt = mergeTaper(vApp, w);
+    ct = Math.max(Math.ceil(mt / 3), 30);
+    tt = Math.max(Math.ceil(mt / 3), 20);
+    const fStr   = vApp <= 70
+      ? `W × V² / 155 = ${w} × ${vApp}² / 155 = ${(w*vApp*vApp/155).toFixed(1)} m`
+      : `W × V = ${w} × ${vApp} = ${w*vApp} m`;
+    const minStr = `Minimum from AS1742.3: ${TAPER_MIN[stdSpeed(vApp)]} m`;
+
+    html += `<div class="kv-list">
+      ${kv('Approach speed (posted)', vApp + ' km/h')}
+      ${kv('Lateral offset / shift (W)', w + ' m')}
+      ${kv('Formula', vApp <= 70 ? 'L = W × V² / 155 (speed ≤ 70 km/h)' : 'L = W × V (speed > 70 km/h)')}
+      ${kv('Formula result', fStr)}
+      ${kv('Minimum taper (AS1742.3)', minStr)}
+    </div>`;
+    html += `<div style="margin-top:16px">
+    <table class="rtable">
+      <thead><tr><th>Taper Type</th><th>Length (m)</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Merge / Approach Taper</strong></td><td>${mt} m</td><td>Traffic merging into adjacent lane — approach side</td></tr>
+        <tr><td>Closing / Departure Taper</td><td>${ct} m</td><td>Traffic returning to normal lanes — departure side</td></tr>
+        <tr><td>Tangent / Shift Taper</td><td>${tt} m</td><td>Lateral shift (road deviation) — both ends of shift</td></tr>
+      </tbody>
+    </table></div>`;
+    if (vWork && vWork < vPosted) {
+      const mtWZ = mergeTaper(vWork, w);
+      html += `<div class="box box-info mt12"><strong>Speed Reduction Note:</strong> Taper may be calculated at work zone speed ${vWork} km/h (${mtWZ} m) if speed reduction is established before the taper. Conservative approach uses posted speed (${mt} m). Confirm with competent person.</div>`;
+    }
+    const ref = {NSW:'AGTTM04-21 / AS1742.3 s.8', QLD:'QGTTM04 / AS1742.3 s.8', WA:'WA Code of Practice / AS1742.3 s.8'};
+    html += `<p class="ref-note mt12">Reference: ${ref[state] || 'AS1742.3-2019 Section 8'}.</p>`;
+  }
+
+  return { mt, ct, tt, html };
+}
+
+// ═══════════════ SIGHT DISTANCES ════════════════════════════════════════════════
+
+function calcSightDistances(vPosted, vWork, env, Q) {
+  const ssdPost  = getSSD(vPosted);
+  const ssdWork  = vWork ? getSSD(vWork) : null;
+  const D        = isNaN(vPosted) ? null : dimD(vPosted, state);
+  const sdMult   = env === 'open' ? 2 : 1.5;
+  const sdLabel  = env === 'open' ? 'Open road (2D)' : 'Built-up area (1.5D)';
+  const eoqSD    = D ? sdMult * D : null;
+
+  let html = `<div class="kv-list">
+    ${kv('Posted speed', vPosted + ' km/h')}
+    ${kv('Stopping Sight Distance at posted speed', ssdPost + ' m')}
+    ${ssdWork ? kv('Stopping Sight Distance at work zone speed (' + vWork + ' km/h)', ssdWork + ' m') : ''}
+    ${D !== null ? kv('Dimension D (' + (state === 'WA' ? 'WA Code of Practice' : state === 'QLD' ? 'QGTTM Table 4.4b' : state === 'NSW' ? 'TCAWS Issue 6.1 / AS1742.3' : 'AS1742.3') + ')', D + ' m') : ''}
+    ${eoqSD !== null ? kv('Required sight distance to end of queue (' + sdLabel + ')', eoqSD + ' m') : ''}
+    ${D !== null ? kv('Required sight distance to PREPARE TO STOP sign', D + ' m (D)') : ''}
+    ${eoqSD !== null && Q ? kv('Actual queue vs sight distance requirement', Math.round(Q) + ' m queue, ' + eoqSD + ' m sight distance required') : ''}
+  </div>`;
+
+  if (eoqSD && Q) {
+    if (Q > eoqSD) {
+      html += `<div class="box box-warn mt12">Queue (${Math.round(Q)} m) extends beyond the required sight distance (${eoqSD} m). Additional PREPARE TO STOP signs required at the predicted end of queue. Consider additional advance warning measures.</div>`;
+    } else {
+      html += `<div class="box box-ok mt12">Sight distance requirement (${eoqSD} m) exceeds predicted queue length (${Math.round(Q)} m). Standard layout should provide adequate warning.</div>`;
+    }
+  }
+
+  if (vPosted > 70) {
+    html += `<div class="box box-warn mt12"><strong>High-speed road:</strong> Posted speed &gt; 70 km/h. Ensure adequate Stopping Sight Distance to the PREPARE TO STOP sign and to the end of queue at all times. Consider second traffic controller to slow vehicles in advance.</div>`;
+  }
+
+  html += `<p class="ref-note mt12">SSD from Austroads Guide to Road Design Part 3. Assumes driver reaction time 2.5 s, deceleration 3.4 m/s². For downgrade roads, use increased SSD values from Austroads tables.</p>`;
+  return { ssdPost, ssdWork, D, eoqSD, html };
+}
+
+// ═══════════════ SIGN LAYOUT ════════════════════════════════════════════════════
+
+function calcSignLayout(vPosted, vWork, closureType, mt, ct, buf, D, numLanes, worksType) {
+  const s      = sgn();
+  const sp     = ['VIC','SA','TAS','NT','ACT'].includes(state) ? agttmSp(vPosted) : signSpacing(vPosted, roadCat);
+  const hasRed = vWork && vWork < vPosted;
+  const isMob  = closureType === 'mobile' || worksType === 'mobile';
+
+  let html = '';
+
+  if (isMob) {
+    html = `<div class="box box-info mb12">Mobile works — no fixed taper. Shadow vehicle arrangement below.</div>`;
+    html += `<div class="sign-layout">
+      <div class="sign-row header"><div class="dist">Position</div><div class="item">Sign / Device</div><div class="note">Notes</div></div>
+      <div class="sign-row s-works"><div class="dist">Workers</div><div class="item">&#128338; Workers on road</div><div class="note">Moving with works activity</div></div>
+      <div class="sign-row s-buffer"><div class="dist">−15 m</div><div class="item">Shadow vehicle (attenuator / arrow board)</div><div class="note">Min 15 m behind last worker; arrow board pointing away from workers</div></div>
+      <div class="sign-row s-sign-req"><div class="dist">−50 m</div><div class="item">${s.speedLimit}</div><div class="note">Work zone speed (if applicable)</div></div>
+      <div class="sign-row s-sign-warn"><div class="dist">Further back</div><div class="item">${s.roadworkAhead}</div><div class="note">Advance warning vehicle or fixed sign</div></div>
+    </div>`;
+    html += `<p class="ref-note mt12">Mobile works references: AS1742.3 s.12 / AGTTM05-21 (NSW) / QGTTM05 (QLD). Shadow vehicle requirements vary by state.</p>`;
+    return { sp, html };
+  }
+
+  // Fixed works: build layout from works outward (distances from start of works area)
+  const rows = [];
+  let dist = 0;
+
+  // Works area
+  rows.push({ dist: 0, item: '&#9632; START OF WORK AREA', note: 'Workers, plant &amp; equipment zone', cls: 's-works' });
+
+  // Buffer (approach side)
+  rows.push({ dist: buf, item: 'End of buffer / clearance zone', note: `${buf} m buffer (longitudinal clearance at ${hasRed ? vWork : vPosted} km/h)`, cls: 's-buffer' });
+  dist = buf;
+
+  // Taper end and start
+  const taperEnd   = dist;
+  const taperStart = dist + mt;
+  rows.push({ dist: taperEnd,   item: 'End of merge taper (last cone)', note: 'Lane closed from this point through work area', cls: 's-taper' });
+  rows.push({ dist: taperStart, item: 'Start of merge taper (first cone)', note: `${mt} m merge taper — W = ${n('lateralShift') || 3.5} m`, cls: 's-taper' });
+  dist = taperStart;
+
+  // Sign at taper entry
+  dist += sp;
+  rows.push({ dist, item: s.mergeSign, note: `At or just before taper entry`, cls: 's-sign-req' });
+
+  // Speed limit sign (if speed reduction)
+  if (hasRed) {
+    dist += sp * 0.5;
+    rows.push({ dist: Math.round(dist), item: `${vWork} km/h ${s.speedLimit}`, note: `Work zone speed reduction`, cls: 's-sign-spd' });
+    dist += sp * 0.5;
+  }
+
+  // Lane closed ahead (for lane closure)
+  if (closureType === 'lane') {
+    dist += sp;
+    rows.push({ dist: Math.round(dist), item: s.laneClosed, note: `Advance warning of lane closure`, cls: 's-sign-warn' });
+  }
+
+  // ROADWORK AHEAD (furthest advance warning)
+  dist += sp;
+  rows.push({ dist: Math.round(dist), item: s.roadworkAhead, note: `First advance warning sign`, cls: 's-sign-warn' });
+
+  const totalAdvance = Math.round(dist);
+
+  // If PREPARE TO STOP required (traffic controller)
+  const prepToStop = closureType === 'road';
+  if (prepToStop && D !== null) {
+    rows.splice(2, 0, {
+      dist: D,
+      item: s.prepareStop,
+      note: `D = ${D} m from traffic control point`,
+      cls: 's-sign-req'
+    });
+  }
+
+  // Sort by distance descending (furthest from works first in visual layout)
+  rows.sort((a, b) => b.dist - a.dist);
+
+  html += `<div class="box box-info mb12">
+    <strong>Sign spacing used:</strong> ${sp} m (Cat ${roadCat} road, ${vPosted} km/h posted speed, per AS1742.3 / ${state === 'NSW' ? 'AGTTM04-21' : state === 'QLD' ? 'QGTTM04' : state === 'WA' ? 'WA CoP' : 'AS1742.3'}).<br>
+    <strong>Total advance distance from works:</strong> ~${totalAdvance} m
+  </div>`;
+
+  html += `<div class="sign-layout">
+    <div class="sign-row header">
+      <div class="dist">From Works</div>
+      <div class="item">Sign / Device / Action</div>
+      <div class="note">Notes</div>
+    </div>`;
+  for (const r of rows) {
+    html += `<div class="sign-row ${r.cls}">
+      <div class="dist">${r.dist} m</div>
+      <div class="item">${r.item}</div>
+      <div class="note">${r.note}</div>
+    </div>`;
+  }
+  // Works start
+  html += `<div class="sign-row s-works"><div class="dist">0 m</div><div class="item">&#9632; START OF WORK AREA</div><div class="note">Workers / plant in this zone</div></div>`;
+  html += `</div>`;
+
+  // Departure side
+  const dRows = [];
+  dRows.push({ dist: 0, item: '&#9632; END OF WORK AREA', note: '', cls: 's-works' });
+  dRows.push({ dist: buf, item: 'Start of closing taper (first cone)', note: `${buf} m buffer (departure side)`, cls: 's-taper' });
+  dRows.push({ dist: buf + ct, item: 'End of closing taper (last cone)', note: `${ct} m closing taper`, cls: 's-taper' });
+  dRows.push({ dist: buf + ct + sp, item: s.endRoadwork, note: 'End of works, remove all signs', cls: 's-end' });
+
+  html += `<div class="section-label" style="margin-top:20px">Departure / Exit Side</div>
+  <div class="sign-layout">
+    <div class="sign-row header"><div class="dist">From Works End</div><div class="item">Sign / Device / Action</div><div class="note">Notes</div></div>`;
+  for (const r of dRows) {
+    html += `<div class="sign-row ${r.cls}"><div class="dist">${r.dist} m</div><div class="item">${r.item}</div><div class="note">${r.note}</div></div>`;
+  }
+  html += `</div>`;
+
+  // Reference
+  const refs = {
+    NSW: 'AGTTM04-21 / TCAWS Issue 6.1 cl.4.5 & 4.6',
+    QLD: 'QGTTM04 Tables 4.4a/b',
+    WA:  'WA Code of Practice for Traffic Management for Works on Roads',
+  };
+  html += `<p class="ref-note mt12">Sign layout reference: ${refs[state] || 'AS1742.3-2019 Section 6'}. Specific sign codes, types and sizes must be verified against the applicable edition of the state guide. A Traffic Guidance Scheme (TGS) must be prepared by a competent person.</p>`;
+
+  return { sp, html };
+}
+
+// ═══════════════ SUMMARY ════════════════════════════════════════════════════════
+
+function renderSummary(vPosted, vWork, mt, ct, buf, D, sp, ssd, eoqSD, Q) {
+  const tiles = [
+    { label:'Estimated Queue Length', value: Q ? Math.round(Q) : '—', unit:'metres' },
+    { label:'Merge Taper Length',     value: mt || '—',               unit:'metres' },
+    { label:'Closing Taper Length',   value: ct || '—',               unit:'metres' },
+    { label:'Buffer Zone',            value: buf,                      unit:'metres' },
+    { label:'Sign Spacing (advance)', value: sp,                       unit:'metres' },
+    { label:'Stopping Sight Dist.',   value: ssd,                      unit:'metres' },
+    { label:'EoQ Sight Dist. Req.',   value: eoqSD || '—',            unit:'metres' },
+    { label:'Dimension D',            value: D || '—',                 unit:'metres' },
+  ];
+  let html = `<div class="summary-grid">`;
+  for (const t of tiles) {
+    html += `<div class="summary-tile">
+      <div class="st-label">${t.label}</div>
+      <div class="st-value">${t.value}</div>
+      <div class="st-unit">${t.unit}</div>
+    </div>`;
+  }
+  html += `</div>`;
+  html += `<div class="box box-amber mt12">
+    <strong>Disclaimer:</strong> These values are calculated estimates based on the inputs provided and referenced standards.
+    All dimensions must be verified on-site by a qualified Traffic Management Designer or competent person before use in a
+    Traffic Guidance Scheme (TGS) or Traffic Management Plan (TMP). Site-specific conditions (horizontal/vertical alignment,
+    sight restrictions, road surface, etc.) may require different values.
+  </div>`;
+  return html;
+}
+
+// ═══════════════ MAIN CALCULATE ════════════════════════════════════════════════
+
+function calculate() {
+  if (!state) { alert('Please select a state first.'); return; }
+
+  const vPosted = n('postedSpeed');
+  const vWork   = n('workSpeed') || null;
+  const W       = n('lateralShift') || n('laneWidth') || 3.5;
+  // Derive road environment from speed (no separate input needed)
+  const env = vPosted > 60 ? 'open' : 'builtup';
+  // Derive closure type from TMP arrangement
+  const tmpTypeVal = v('tmpType');
+  const closureT = (works === 'mobile') ? 'mobile'
+    : ['shuttleflow','contraflow','road-closure'].includes(tmpTypeVal) ? 'road'
+    : ['lane-closure','lane-narrow'].includes(tmpTypeVal) ? 'lane'
+    : 'shoulder';
+  const isMobile= closureT === 'mobile' || works === 'mobile';
+
+  if (isNaN(vPosted)) { alert('Please enter the posted speed limit.'); return; }
+
+  // --- EoQ ---
+  let eoqResult = null;
+  if (['VIC','SA','TAS','NT','ACT'].includes(state)) eoqResult = eoqVic(vPosted, env);
+  else if (state === 'WA')  eoqResult = eoqWA(vPosted);
+  else if (state === 'NSW') eoqResult = eoqNSW(vPosted, env);
+  else if (state === 'QLD') eoqResult = eoqQLD();
+  if (!eoqResult) return;
+
+  const Q = eoqResult.Q;
+
+  // --- Tapers ---
+  const buf  = isMobile ? 0 : getBuffer(vPosted);
+  const taperResult = calcTapers(vPosted, vWork, W, closureT);
+
+  // --- Sight Distances ---
+  const sightResult = calcSightDistances(vPosted, vWork, env, Q);
+
+  // --- Signs ---
+  const D   = sightResult.D;
+  const signResult = calcSignLayout(vPosted, vWork, closureT, taperResult.mt, taperResult.ct, buf, D, v('numLanes'), works);
+
+  // --- Summary ---
+  const summaryHtml = renderSummary(vPosted, vWork, taperResult.mt, taperResult.ct, buf, D,
+    signResult.sp, sightResult.ssdPost, sightResult.eoqSD, Q);
+
+  // --- TMP Diagram ---
+  const tmpT      = v('tmpType');
+  const workArea  = n('workAreaLen') || Math.max(Math.round(Q || 100), 50);
+  const diagramHtml = generateTMPDiagram({
+    state, tmpType: tmpT, vPosted, vWork, numLanes: parseInt(v('numLanes')),
+    laneW: n('laneWidth') || 3.5, mt: taperResult.mt, ct: taperResult.ct,
+    buf, sp: signResult.sp, D, Q, works, sgns: sgn(), workLen: workArea,
+    tcMethod: v('tcMethod') || 'tc', roadConfig,
+  });
+
+  const nL = parseInt(v('numLanes')) || 1;
+
+  // --- Render ---
+  document.getElementById('body-eoq').innerHTML     = eoqResult.html;
+  document.getElementById('body-taper').innerHTML   = taperResult.html;
+  document.getElementById('body-sight').innerHTML   = sightResult.html;
+  document.getElementById('body-signs').innerHTML   = signResult.html;
+  document.getElementById('body-summary').innerHTML = summaryHtml;
+  document.getElementById('body-diagram').innerHTML = diagramHtml;
+
+  document.getElementById('calcSummaryBar').innerHTML =
+    `Calculated for: <strong>${(STATE_INFO[state]||{}).name}</strong> &bull; ` +
+    `Posted: <strong>${vPosted} km/h</strong> &bull; ` +
+    `Work Zone: <strong>${vWork ? vWork+' km/h' : 'No reduction'}</strong> &bull; ` +
+    `${nL} lane${nL>1?'s':''} &bull; ` +
+    `${TMP_NAMES[v('tmpType')]||''}`;
+  document.getElementById('calcSummaryBar').style.display = 'block';
+
+  // Populate print-only job details card
+  const worksLabel = works==='short'?'Short Term Works':works==='long'?'Long Term Works':'Mobile Works';
+  const catLabel   = roadCat===1?'Cat 1 — Local / Council':roadCat===2?'Cat 2 — Arterial / State Road':'Cat 3 — Freeway / Motorway';
+  const envLabel   = env==='builtup'?'Built-up (Urban)':'Open Road (Rural)';
+  const tcLabel    = {tc:'Traffic Controller',ptl:'Portable Traffic Lights',boom:'Portable Boom Barrier'}[v('tcMethod')||'tc'] || 'Traffic Controller';
+  document.getElementById('printJobContent').innerHTML = `
+    <table class="rtable" style="font-size:.85rem;">
+      <thead><tr><th colspan="4" style="font-size:.9rem;">Calculation Inputs</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="width:22%">State / Territory</td><td style="width:28%;font-weight:700">${(STATE_INFO[state]||{}).name||state}</td>
+          <td style="width:22%">Type of Works</td><td style="font-weight:700">${worksLabel}</td>
+        </tr>
+        <tr>
+          <td>Road Category</td><td style="font-weight:700">${catLabel}</td>
+          <td>Road Configuration</td><td style="font-weight:700">${roadConfig === 'undivided' ? 'Single Carriageway (Undivided)' : roadConfig === 'divided' ? 'Divided Road (Dual Carriageway)' : roadConfig === 'oneway' ? 'One-way Road' : 'Freeway / Motorway'}</td>
+        </tr>
+        <tr>
+          <td>Posted Speed</td><td style="font-weight:700">${vPosted} km/h</td>
+          <td>Work Zone Speed</td><td style="font-weight:700">${vWork ? vWork+' km/h' : 'No reduction'}</td>
+        </tr>
+        <tr>
+          <td>Lanes (each direction)</td><td style="font-weight:700">${nL}</td>
+          <td>Lane Width</td><td style="font-weight:700">${n('laneWidth')||3.5} m</td>
+        </tr>
+        <tr>
+          <td>Lateral Shift / Offset</td><td style="font-weight:700">${n('lateralShift')||3.5} m</td>
+          <td>Work Area Length</td><td style="font-weight:700">${n('workAreaLen') ? n('workAreaLen')+' m' : 'Estimated from queue'}</td>
+        </tr>
+        <tr>
+          <td>TM Arrangement</td><td style="font-weight:700">${TMP_NAMES[v('tmpType')]||v('tmpType')}</td>
+          <td>Traffic Control Method</td><td style="font-weight:700">${tcLabel}</td>
+        </tr>
+        <tr>
+          <td>Applicable Standard</td><td colspan="3" style="font-weight:700">${(STATE_INFO[state]||{}).badges ? (STATE_INFO[state].badges.join(' &bull; ')) : 'AS1742.3'}</td>
+        </tr>
+      </tbody>
+    </table>`;
+  document.getElementById('printDateTime').textContent = new Date().toLocaleString('en-AU', {dateStyle:'long',timeStyle:'short'});
+
+  show('resultsArea');
+  document.getElementById('pdfBar').style.display = 'block';
+  document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ═══════════════ TMP DIAGRAM GENERATION ══════════════════════════════════════════
+
+const TMP_NAMES = {
+  'lane-closure':'Lane Closure',      'lane-narrow':'Lane Narrowing',
+  'shuttleflow':'Shuttleflow (One Lane Two-Way)', 'contraflow':'Contraflow',
+  'shoulder':'Works in Shoulder',     'median':'Works on Median',
+  'footpath':'Works on Footpath',     'carpark':'Car Park Occupation',
+  'road-closure':'Full Road Closure (Detour)',
+};
+
+// State-specific regulatory notes per TM type
+const TMP_REG = {
+  'lane-closure': {
+    NSW:'AGTTM04-21 / TCAWS Issue 6.1 — Merge taper, buffer &amp; sign layout required. PREPARE TO STOP (T1-18B) at D from controller.',
+    QLD:'QGTTM04 — Taper lengths &amp; sign spacing per Tables 4.4a/b. Traffic queue monitoring mandatory.',
+    WA:'WA Code of Practice — Merge taper per AS1742.3. PREPARE TO STOP at 2D from end of queue.',
+    VIC:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
+    SA:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
+    TAS:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
+    NT:'AS1742.3-2019 — Merge taper, buffer &amp; advance warning signs required.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements. Merge taper, buffer &amp; advance warning signs required. Traffic queue monitoring mandatory.',
+  },
+  'shuttleflow': {
+    NSW:'AGTTM04-21 — Shuttleflow requires traffic controllers or portable traffic signals at each end. Max single-lane section per AS1742.3 Table 4.9. PREPARE TO STOP (T1-18B) required.',
+    QLD:'QGTTM04 — Shuttleflow with traffic controllers. Section length must comply with AS1742.3 Table 4.9. Queues managed per EoQ procedure.',
+    WA:'WA CoP — Shuttleflow. Traffic controllers required. D dimension applies to each controller position.',
+    VIC:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end. Max single-lane section per Table 4.9.',
+    SA:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
+    TAS:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
+    NT:'AS1742.3-2019 — Shuttleflow. Traffic controllers required at each end.',
+    ACT:'AGTTM04-21 — Shuttleflow requires traffic controllers or portable traffic signals at each end per AS1742.3 Table 4.9.',
+  },
+  'contraflow': {
+    NSW:'AGTTM05-21 — Contraflow requires lane separation devices, overhead signing and detailed TMP. RMS/TfNSW approval required.',
+    QLD:'QGTTM05 — Contraflow requires TMR approval. Suitable separation between opposing traffic flows mandatory.',
+    WA:'WA CoP — Contraflow operations require Main Roads WA approval and comprehensive TMP.',
+    VIC:'AS1742.3-2019 — Contraflow requires rigid separation. Refer to VicRoads for approval requirements.',
+    SA:'AS1742.3-2019 — Contraflow — consult DPTI/DIT for approval.',
+    TAS:'AS1742.3-2019 — Contraflow — consult DIER/DSG for approval.',
+    NT:'AS1742.3-2019 — Contraflow — consult DIPL for approval.',
+    ACT:'AGTTM05-21 — Contraflow requires TCCS approval and comprehensive TMP. Rigid separation required.',
+  },
+  'lane-narrow': {
+    NSW:'AGTTM04-21 — Lane narrowing using delineation devices. Minimum lane width per AS1742.3 and TfNSW requirements.',
+    QLD:'QGTTM04 — Lane narrowing. Minimum lane width 3.0 m (general) or as directed by TMR. Delineation devices required.',
+    WA:'WA CoP — Lane narrowing with delineation devices. Minimum lane widths per Main Roads WA specifications.',
+    VIC:'AS1742.3-2019 — Lane narrowing. Minimum lane width 3.0 m general; 2.7 m low speed/short term.',
+    SA:'AS1742.3-2019 — Lane narrowing with delineation.',
+    TAS:'AS1742.3-2019 — Lane narrowing with delineation.',
+    NT:'AS1742.3-2019 — Lane narrowing with delineation.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
+  },
+  'shoulder': {
+    NSW:'AGTTM04-21 — Works in shoulder. If works encroach on travel lane, full lane-closure treatment required.',
+    QLD:'QGTTM04 — Shoulder works. Delineation of work area from travel lanes. Tapers required if shoulder forms part of used roadway.',
+    WA:'WA CoP — Shoulder works. Delineation required. If vehicles use shoulder, taper and warning signs needed.',
+    VIC:'AS1742.3-2019 — Works in sealed shoulder. Delineation required.',
+    SA:'AS1742.3-2019 — Works in shoulder. Delineation required.',
+    TAS:'AS1742.3-2019 — Works in shoulder.',
+    NT:'AS1742.3-2019 — Works in shoulder.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
+  },
+  'median': {
+    NSW:'AGTTM04-21 — Works on median. Where works require encroachment on travel lanes, full lane-closure treatment required on affected carriageway.',
+    QLD:'QGTTM04 — Median works. Both carriageways may need signing if works are adjacent to travel lanes.',
+    WA:'WA CoP — Median works. Consider sight-line impacts and proximity to travel lanes.',
+    VIC:'AS1742.3-2019 — Median works. Signing required on adjacent carriageways if proximity risk exists.',
+    SA:'AS1742.3-2019 — Median works.', TAS:'AS1742.3-2019 — Median works.', NT:'AS1742.3-2019 — Median works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
+  },
+  'footpath': {
+    NSW:'AGTTM04-21 — Works on footpath. Pedestrian detour required with ACROD-compliant alternative path. Works affecting carriageway require lane-closure treatment.',
+    QLD:'QGTTM04 — Footpath works. Pedestrian management required. Compliant alternative pathway must be provided.',
+    WA:'WA CoP — Footpath works. Pedestrian detour and hoarding/fencing where required.',
+    VIC:'AS1742.3-2019 — Footpath works. Pedestrian management required.',
+    SA:'AS1742.3-2019 — Footpath works.', TAS:'AS1742.3-2019 — Footpath works.', NT:'AS1742.3-2019 — Footpath works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
+  },
+  'carpark': {
+    NSW:'AGTTM04-21 — Car park occupation. Suitable alternative parking and clear wayfinding required. Works must not obstruct access to adjacent premises without authority.',
+    QLD:'QGTTM04 — Car park works. Maintain or provide alternative access. Signage required on approach.',
+    WA:'WA CoP — Car park works. Liaise with local council/property owner.',
+    VIC:'AS1742.3-2019 — Car park works.',
+    SA:'AS1742.3-2019 — Car park works.', TAS:'AS1742.3-2019 — Car park works.', NT:'AS1742.3-2019 — Car park works.',
+    ACT:'AGTTM04-21 / AS1742.3 — ACT Government (TCCS) requirements apply.',
+  },
+};
+
+// ── SVG primitive helpers ──────────────────────────────────────────────────────
+
+function svgRect(x,y,w,h,fill,extra='') {
+  return `<rect x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" fill="${fill}" ${extra}/>`;
+}
+function svgLine(x1,y1,x2,y2,stroke,sw,extra='') {
+  return `<line x1="${r(x1)}" y1="${r(y1)}" x2="${r(x2)}" y2="${r(y2)}" stroke="${stroke}" stroke-width="${sw}" ${extra}/>`;
+}
+function svgText(x,y,txt,anchor='middle',size=10,fill='#1e293b',bold=false,rot='') {
+  return `<text x="${r(x)}" y="${r(y)}" text-anchor="${anchor}" font-size="${size}" font-weight="${bold?'bold':'normal'}" fill="${fill}" ${rot}>${txt}</text>`;
+}
+function svgPoly(pts,fill,stroke='none',sw=1) {
+  return `<polygon points="${pts.map(p=>r(p[0])+','+r(p[1])).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+}
+function r(v){ return Math.round(v*10)/10; }
+
+// Dimension arrow: double-headed arrow with label
+function dimArr(x1,y,x2,label,col='#1a365d',textY=null) {
+  const ty = textY !== null ? textY : y+13;
+  const arrowLen = 6;
+  // Left arrowhead
+  const la = `<polygon points="${r(x1)},${r(y)} ${r(x1+arrowLen)},${r(y-3)} ${r(x1+arrowLen)},${r(y+3)}" fill="${col}"/>`;
+  // Right arrowhead
+  const ra = `<polygon points="${r(x2)},${r(y)} ${r(x2-arrowLen)},${r(y-3)} ${r(x2-arrowLen)},${r(y+3)}" fill="${col}"/>`;
+  const line = svgLine(x1,y,x2,y,col,1.5);
+  const txt  = svgText((x1+x2)/2,ty,label,'middle',9,col,true);
+  return la+ra+line+txt;
+}
+
+// Traffic cone symbol
+function cone(cx,cy,sz=7) {
+  return `<polygon points="${r(cx)},${r(cy-sz)} ${r(cx-sz*0.55)},${r(cy+sz*0.4)} ${r(cx+sz*0.55)},${r(cy+sz*0.4)}" fill="#f97316" stroke="#c2410c" stroke-width="0.8"/>`;
+}
+
+// Spread cones along a line
+function cones(x1,y1,x2,y2,n=6,sz=6) {
+  let s='';
+  for(let i=0;i<=n;i++){
+    const t=i/n;
+    s+=cone(x1+t*(x2-x1), y1+t*(y2-y1), sz);
+  }
+  return s;
+}
+
+// Sign box above road — draw proper diamond for warn/end, rectangle for others
+function signBox(cx, cy, lines, type='warn') {
+  let s = '';
+  if (type === 'warn') {
+    // Orange warning diamond (AS1742.3 style)
+    const s2 = 28;
+    const s2o = s2 + 3;
+    const ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+    const pts  = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+    s += '<polygon points="'+ptsO+'" fill="#92400e" stroke="none"/>';
+    s += '<polygon points="'+pts+'" fill="#f97316" stroke="none"/>';
+    const lh = 9, nL = lines.length, startY = cy - (nL-1)*lh/2;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(startY+i*lh+3)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white">'+l+'</text>'; });
+    s += svgLine(cx, cy+s2o, cx, cy+s2o+16, '#92400e', 2);
+  } else if (type === 'end') {
+    // Green diamond
+    const s2 = 28, s2o = s2+3;
+    const ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+    const pts  = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+    s += '<polygon points="'+ptsO+'" fill="#14532d" stroke="none"/>';
+    s += '<polygon points="'+pts+'" fill="#16a34a" stroke="none"/>';
+    const lh = 9, nL = lines.length, startY = cy - (nL-1)*lh/2;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(startY+i*lh+3)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="white">'+l+'</text>'; });
+    s += svgLine(cx, cy+s2o, cx, cy+s2o+16, '#14532d', 2);
+  } else if (type === 'speed') {
+    // Red circle speed sign
+    s += '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="22" fill="#dc2626"/>';
+    s += '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white"/>';
+    const fs = lines[0] && lines[0].length > 2 ? 10 : 13;
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(cy+(i-lines.length/2+0.7)*10)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+l+'</text>'; });
+    s += svgLine(cx, cy+22, cx, cy+38, '#dc2626', 2);
+  } else {
+    // Rectangular sign (stop/info)
+    const C = {
+      stop: {bg:'#dc2626',border:'#7f1d1d',txt:'white'},
+      info: {bg:'#2563eb',border:'#1e3a8a',txt:'white'},
+    };
+    const c = C[type] || {bg:'#f3f4f6',border:'#6b7280',txt:'#111'};
+    const lh=11, pad=6;
+    const maxW = Math.max(...lines.map(l=>l.length))*6+pad*2;
+    const h = lines.length*lh+pad*2;
+    const x = cx-maxW/2, y = cy-h/2;
+    s += '<rect x="'+r(x)+'" y="'+r(y)+'" width="'+r(maxW)+'" height="'+r(h)+'" rx="3" fill="'+c.bg+'" stroke="'+c.border+'" stroke-width="2"/>';
+    lines.forEach((l,i) => { s += '<text x="'+r(cx)+'" y="'+r(y+pad+lh*(i+0.8))+'" text-anchor="middle" font-size="8" font-weight="bold" fill="'+c.txt+'">'+l+'</text>'; });
+    s += svgLine(cx, y+h, cx, y+h+16, c.border, 2);
+  }
+  return s;
+}
+
+// Traffic controller symbol
+function controller(cx,cy) {
+  return `<circle cx="${r(cx)}" cy="${r(cy)}" r="6" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="1"/>
+          ${svgText(cx,cy+3,'TC','middle',6,'white',true)}`;
+}
+
+// Speed circle sign — proper red-bordered Australian speed limit sign
+function speedSign(cx,cy,spd) {
+  const fs = String(spd).length > 2 ? 9 : 12;
+  return `<circle cx="${r(cx)}" cy="${r(cy)}" r="20" fill="#dc2626"/>
+          <circle cx="${r(cx)}" cy="${r(cy)}" r="16" fill="white"/>
+          <text x="${r(cx)}" y="${r(cy+5)}" text-anchor="middle" font-size="${fs}" font-weight="900" fill="#111">${spd}</text>
+          ${svgLine(cx,cy+20,cx,cy+34,'#dc2626',2)}`;
+}
+
+// Arrow showing traffic direction
+function flowArrow(x,y,right=true) {
+  const d = right ? 1 : -1;
+  return `<polygon points="${r(x+d*16)},${r(y)} ${r(x)},${r(y-5)} ${r(x)},${r(y+5)}" fill="#2563eb" opacity="0.7"/>
+          ${svgLine(x-d*10,y,x+d*4,y,'#2563eb',2,'opacity="0.7"')}`;
+}
+
+// Hatch pattern defs
+function hatches() {
+  return `<defs>
+    <pattern id="hWork" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#ef4444" stroke-width="3"/>
+    </pattern>
+    <pattern id="hCone" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#f97316" stroke-width="2.5"/>
+    </pattern>
+    <pattern id="hBuf" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#fbbf24" stroke-width="1.5"/>
+    </pattern>
+    <pattern id="hGrass" patternUnits="userSpaceOnUse" width="8" height="8">
+      <line x1="0" y1="4" x2="4" y2="0" stroke="#86efac" stroke-width="0.5" opacity="0.4"/>
+    </pattern>
+    <pattern id="hShoulder" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(30)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#a3e635" stroke-width="3"/>
+    </pattern>
+  </defs>`;
+}
+
+// Wrapped SVG container
+function wrapSVG(content, w, h) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="display:block;font-family:Segoe UI,Tahoma,sans-serif">
+  ${hatches()}
+  ${content}
+</svg>`;
+}
+
+// ── Geometry calculator ────────────────────────────────────────────────────────
+
+function tmGeo(mt, ct, buf, sp, workLen, nLanes, extraApproach=0) {
+  const LM=40, RM=40, AVAIL=820;
+  const LANE_H=38, SH=18; // shoulder height
+  const total = extraApproach + 3*sp + mt + buf + workLen + buf + ct + sp;
+  const s = AVAIL / total;
+  const RTOP = 95; // road top Y
+  const roadH = nLanes*LANE_H;
+  const RBOT = RTOP+roadH;
+  const DIMY = RBOT+30;
+  const SVGH = DIMY+75;  // was DIMY+55
+  const SVGW = AVAIL+LM+RM;
+
+  const X = (d)=> LM + d*s;
+  const xS1 = X(extraApproach+0);
+  const xS2 = X(extraApproach+sp);
+  const xS3 = X(extraApproach+2*sp);
+  const xTS = X(extraApproach+3*sp);
+  const xTE = X(extraApproach+3*sp+mt);
+  const xWS = X(extraApproach+3*sp+mt+buf);
+  const xWE = X(extraApproach+3*sp+mt+buf+workLen);
+  const xCS = X(extraApproach+3*sp+mt+buf+workLen+buf);
+  const xCE = X(extraApproach+3*sp+mt+buf+workLen+buf+ct);
+  const xSE = X(extraApproach+3*sp+mt+buf+workLen+buf+ct+sp);
+  const xEnd = SVGW-RM;
+  return { s,LM,RM,LANE_H,SH,RTOP,roadH,RBOT,DIMY,SVGH,SVGW,
+           xS1,xS2,xS3,xTS,xTE,xWS,xWE,xCS,xCE,xSE,xEnd,
+           sp,mt,ct,buf,workLen,nLanes };
+}
+
+// ── LANE CLOSURE diagram ───────────────────────────────────────────────────────
+
+function svgLaneClosure(p) {
+  const { LANE_H,SH,RTOP,RBOT,DIMY,SVGH,SVGW,
+          xS1,xS2,xS3,xTS,xTE,xWS,xWE,xCS,xCE,xSE,xEnd,
+          sp,mt,ct,buf,workLen,nLanes,sgns,vPosted,vWork,state } = p;
+
+  const cLane = RTOP; // closed lane top (topmost lane)
+  const cLaneBot = RTOP+LANE_H; // closed lane bottom
+  const openTop = cLaneBot;
+  const openH = (nLanes-1)*LANE_H;
+
+  let s = '';
+
+  // Ground
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  // Shoulder strips
+  s += svgRect(0,RTOP-SH,SVGW,SH,'#a7f3d0');
+  s += svgRect(0,RBOT,SVGW,SH,'#a7f3d0');
+
+  // Full road (approach side, before taper)
+  s += svgRect(0,RTOP,xTS,nLanes*LANE_H,'#475569');
+  // Open lanes through work zone
+  s += svgRect(xTS,openTop,xEnd-xTS,openH,'#475569');
+  // Departure: full road restored after closing taper
+  s += svgRect(xCE,RTOP,xEnd-xCE,nLanes*LANE_H,'#475569');
+
+  // Closed lane buffer zones
+  s += svgRect(xTE,cLane,xWS-xTE,LANE_H,'#fef3c7');
+  s += svgRect(xWE,cLane,xCS-xWE,LANE_H,'#fef3c7');
+  // Work area in closed lane
+  s += svgRect(xWS,cLane,xWE-xWS,LANE_H,'url(#hWork)');
+  s += svgRect(xWS,cLane,xWE-xWS,LANE_H,'#ef4444','opacity="0.25"');
+
+  // Approach taper fill (orange zone)
+  s += svgPoly([[xTS,cLane],[xTE,cLane],[xTE,cLaneBot],[xTS,cLane]],'#fed7aa');
+  s += svgPoly([[xTS,cLane],[xTE,cLane],[xTE,cLaneBot],[xTS,cLane]],'url(#hCone)','none',0);
+  // Approach taper cone line
+  s += svgLine(xTS,cLane,xTE,cLaneBot,'#f97316',2.5,'stroke-dasharray="8,4"');
+  s += cones(xTS,cLane,xTE,cLaneBot,Math.max(4,Math.round((xTE-xTS)/20)));
+
+  // Closing taper fill
+  s += svgPoly([[xCS,cLaneBot],[xCE,cLane],[xCE,cLaneBot],[xCS,cLaneBot]],'#fed7aa');
+  s += svgLine(xCS,cLaneBot,xCE,cLane,'#f97316',2.5,'stroke-dasharray="8,4"');
+  s += cones(xCS,cLaneBot,xCE,cLane,Math.max(3,Math.round((xCE-xCS)/20)));
+
+  // Lane markings (dashed between lanes)
+  for(let i=1;i<nLanes;i++){
+    s += svgLine(0,RTOP+i*LANE_H,xEnd,RTOP+i*LANE_H,'white',1.5,'stroke-dasharray="14,9" opacity="0.8"');
+  }
+  // Road edges
+  s += svgLine(0,RTOP,xEnd,RTOP,'white',2);
+  s += svgLine(0,RBOT,xEnd,RBOT,'white',2);
+
+  // Centre divider (if shown)
+  s += svgLine(0,RBOT+SH/2,xEnd,RBOT+SH/2,'#f59e0b',1.5,'stroke-dasharray="20,8"');
+
+  // Work area label
+  s += svgText((xWS+xWE)/2,cLane+LANE_H/2+4,'WORK AREA','middle',9,'white',true);
+  if(xWE-xWS > 50) s += svgText((xWS+xWE)/2,cLane+LANE_H/2+16,workLen+' m','middle',8,'#fca5a5',false);
+
+  // Buffer labels
+  if(xWS-xTE > 30) s += svgText((xTE+xWS)/2,cLane+LANE_H/2+4,'BUFFER','middle',8,'#92400e',true);
+  if(xCS-xWE > 30) s += svgText((xWE+xCS)/2,cLane+LANE_H/2+4,'BUFFER','middle',8,'#92400e',true);
+
+  // Flow arrows
+  for(let i=0;i<nLanes-1;i++){
+    const ay = openTop+(i+0.5)*LANE_H;
+    s += flowArrow((xWS+xWE)/2, ay, true);
+  }
+  if(nLanes===1) s += flowArrow(xS1+sp*p.s*0.5, RTOP+LANE_H/2, true);
+
+  // Signs above road ─────────────────────────
+  const signY = RTOP-48;
+  const stemY = RTOP-10;
+
+  // ROADWORK AHEAD
+  s += signBox(xS1, signY, [sgns.roadworkAhead.split('(')[0].trim(), sgns.roadworkAhead.includes('(') ? '('+sgns.roadworkAhead.split('(')[1] : ''].filter(Boolean), 'warn');
+  s += svgLine(xS1,stemY,xS1,RTOP,'#d97706',1,'opacity="0.5"');
+
+  // LANE CLOSED AHEAD
+  s += signBox(xS2, signY, [sgns.laneClosed.split('(')[0].trim(), sgns.laneClosed.includes('(')?'('+sgns.laneClosed.split('(')[1]:''].filter(Boolean), 'warn');
+  s += svgLine(xS2,stemY,xS2,RTOP,'#d97706',1,'opacity="0.5"');
+
+  // Speed sign (if reduction)
+  if(vWork && vWork < vPosted) {
+    const xSp = (xS2+xTS)/2;
+    s += speedSign(xSp,signY+12,vWork);
+  }
+
+  // MERGE sign
+  s += signBox(xTS, signY, [sgns.mergeSign.split('(')[0].trim()], 'info');
+  s += svgLine(xTS,stemY,xTS,RTOP,'#2563eb',1,'opacity="0.5"');
+
+  // END ROAD WORK
+  s += signBox(xSE, signY, [sgns.endRoadwork.split('(')[0].trim(), sgns.endRoadwork.includes('(')?'('+sgns.endRoadwork.split('(')[1]:''].filter(Boolean), 'end');
+
+  // Dimension arrows — all annotated ─────────────────────────
+  const dy0 = DIMY, dy1 = DIMY+18, dy2 = DIMY+36;
+  s += dimArr(xS1, dy0, xS2, sp+' m');
+  s += dimArr(xS2, dy0, xS3, sp+' m');
+  s += dimArr(xS3, dy0, xTS, sp+' m');
+  s += dimArr(xTS, dy1, xTE, mt+' m merge taper');
+  s += dimArr(xTE, dy1, xWS, buf+' m buffer');
+  s += dimArr(xWS, dy2, xWE, workLen+' m work area');
+  s += dimArr(xWE, dy1, xCS, buf+' m buffer');
+  s += dimArr(xCS, dy1, xCE, ct+' m closing taper');
+  s += dimArr(xCE, dy0, xSE, sp+' m');
+
+  // Speed labels on road
+  s += svgText(xS1-20, RTOP+openH/2+(nLanes>1?LANE_H:0)+5, vPosted+' km/h', 'middle', 9, 'white', true, 'transform="rotate(-90,'+(xS1-20)+','+(RTOP+openH/2+(nLanes>1?LANE_H:0)+5)+')"');
+
+  // Posted & work zone speed tags
+  s += `<rect x="${r(0)}" y="${r(RTOP-13)}" width="38" height="12" rx="3" fill="#1a365d" opacity="0.85"/>`;
+  s += svgText(19,RTOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  if(vWork && vWork<vPosted){
+    s += `<rect x="${r(xWS-2)}" y="${r(RTOP-13)}" width="38" height="12" rx="3" fill="#dc2626" opacity="0.85"/>`;
+    s += svgText(xWS+17,RTOP-4,vWork+' km/h','middle',7.5,'white',true);
+  }
+
+  // Direction label
+  s += svgText(30,RTOP-20,'→ Direction of Travel','start',9,'#1a365d',false);
+
+  return wrapSVG(s, SVGW, SVGH);
+}
+
+// ── SHUTTLEFLOW diagram ─────────────────────────────────────────────────────────
+
+function svgShuttleflow(p) {
+  const { LANE_H,SH,RTOP,RBOT,DIMY,SVGH,SVGW,
+          xS1,xS2,xTS,xTE,xWS,xWE,xCS,xCE,xSE,xEnd,
+          sp,mt,ct,buf,workLen,nLanes,sgns,vPosted,vWork,state } = p;
+
+  // Shuttleflow: road has 2 lanes (one each direction), one direction stopped
+  const rH2 = 2*LANE_H; // two lanes shown
+  const lane1Y = RTOP;           // approaching traffic lane
+  const lane2Y = RTOP+LANE_H;   // other direction
+
+  let s = '';
+
+  // Ground
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  s += svgRect(0,RTOP-SH,SVGW,SH,'#a7f3d0');
+  s += svgRect(0,RTOP+rH2,SVGW,SH,'#a7f3d0');
+
+  // Full 2-lane road
+  s += svgRect(0,RTOP,SVGW,rH2,'#475569');
+
+  // Work zone occupies full road width
+  s += svgRect(xWS,RTOP,xWE-xWS,rH2,'url(#hWork)');
+  s += svgRect(xWS,RTOP,xWE-xWS,rH2,'#ef4444','opacity="0.25"');
+
+  // One lane two-way section (between tapers)
+  s += svgRect(xTE,RTOP,xCS-xTE,rH2,'#374151');
+  // Available lane (single-lane working area)
+  s += svgRect(xTE,lane2Y,xCS-xTE,LANE_H,'#1d4ed8','opacity="0.2"');
+
+  // Approach taper (approach side — narrows from 2 lanes to 1)
+  s += svgPoly([[xTS,RTOP],[xTE,RTOP],[xTE,RTOP+LANE_H],[xTS,RTOP]],'#fed7aa');
+  s += svgLine(xTS,RTOP,xTE,lane2Y,'#f97316',2.5,'stroke-dasharray="8,4"');
+  s += cones(xTS,RTOP,xTE,lane2Y,6);
+
+  // Closing taper (departure side)
+  s += svgPoly([[xCS,lane2Y],[xCE,RTOP],[xCE,RTOP]],'#fed7aa');
+  s += svgLine(xCS,lane2Y,xCE,RTOP,'#f97316',2.5,'stroke-dasharray="8,4"');
+  s += cones(xCS,lane2Y,xCE,RTOP,5);
+
+  // Lane marking
+  s += svgLine(0,lane2Y,SVGW,lane2Y,'#fbbf24',2,'stroke-dasharray="0,0"');
+  s += svgLine(0,RTOP,SVGW,RTOP,'white',2);
+  s += svgLine(0,RTOP+rH2,SVGW,RTOP+rH2,'white',2);
+
+  // Traffic controllers at each end
+  s += controller(xTE-12, RTOP+rH2+10);
+  s += controller(xCS+12, RTOP+rH2+10);
+  s += svgText(xTE-12,RTOP+rH2+24,'TC','middle',7,'#1d4ed8',true);
+  s += svgText(xCS+12,RTOP+rH2+24,'TC','middle',7,'#1d4ed8',true);
+
+  // Flow arrows
+  s += flowArrow((xS1+xTE)/2, lane1Y+LANE_H/2, true);
+  s += flowArrow((xCS+xSE)/2, lane2Y+LANE_H/2, false);
+
+  // Work area label
+  s += svgText((xWS+xWE)/2,RTOP+LANE_H,'WORK AREA','middle',9,'white',true);
+  s += svgText((xWS+xWE)/2,RTOP+LANE_H+13,workLen+' m','middle',8,'#fca5a5',false);
+
+  // Signs above road
+  const signY = RTOP-46;
+  s += signBox(xS1, signY, [sgns.roadworkAhead.split('(')[0].trim()], 'warn');
+  s += signBox(xTS, signY, [sgns.prepareStop.split('(')[0].trim(),'(T1-18B)'.replace('(T1-18B)','')].filter(l=>l.trim()), 'stop');
+  s += signBox(xCE+sp*p.s*0.5, signY, [sgns.endRoadwork.split('(')[0].trim()], 'end');
+
+  // D dimension markers
+  if(p.D) {
+    const xD = Math.min(xTE+p.D*p.s, xWS-5);
+    s += dimArr(xTE, DIMY, xD, p.D+' m (D)');
+  }
+
+  // Dimensions — sign spacings and tapers
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
+  s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
+  s += dimArr(xTE,DIMY+36,xCS,'One-lane section: '+workLen+' m');
+  s += dimArr(xCS,DIMY+18,xCE,ct+' m (taper)');
+  s += dimArr(xCE,DIMY,xSE,sp+' m');
+
+  // Speed tags
+  s += `<rect x="0" y="${r(RTOP-13)}" width="38" height="12" rx="3" fill="#1a365d" opacity="0.85"/>`;
+  s += svgText(19,RTOP-4,vPosted+' km/h','middle',7.5,'white',true);
+  if(vWork && vWork<vPosted){
+    s += `<rect x="${r(xWS-2)}" y="${r(RTOP-13)}" width="38" height="12" rx="3" fill="#dc2626" opacity="0.85"/>`;
+    s += svgText(xWS+17,RTOP-4,vWork+' km/h','middle',7.5,'white',true);
+  }
+
+  s += svgText(30,RTOP-20,'→ Direction of Travel (Approach)','start',9,'#1a365d',false);
+  s += svgText(SVGW-30,RTOP+rH2+40,'← Opposing Direction','end',8,'#1d4ed8',false);
+
+  return wrapSVG(s, SVGW, p.SVGH+10);
+}
+
+// ── LANE NARROWING diagram ─────────────────────────────────────────────────────
+
+function svgLaneNarrow(p) {
+  const { LANE_H,SH,RTOP,RBOT,DIMY,SVGH,SVGW,
+          xTS,xTE,xWS,xWE,xCS,xCE,xSE,xS1,xS2,xEnd,
+          sp,mt,ct,buf,workLen,nLanes,sgns,vPosted,vWork } = p;
+
+  let s = '';
+  const narrowPx = LANE_H*0.35; // how much the lane narrows
+
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  s += svgRect(0,RTOP-SH,SVGW,SH,'#a7f3d0');
+  s += svgRect(0,RBOT,SVGW,SH,'#a7f3d0');
+
+  // Full road
+  s += svgRect(0,RTOP,SVGW,nLanes*LANE_H,'#475569');
+
+  // Narrowed zone (top portion of lane 1)
+  s += svgRect(xTE,RTOP,xCS-xTE,narrowPx,'url(#hCone)');
+  s += svgRect(xTE,RTOP,xCS-xTE,narrowPx,'#f97316','opacity="0.4"');
+
+  // Taper polygon (top edge tapering in)
+  s += svgPoly([[xTS,RTOP],[xTE,RTOP+narrowPx],[xCS,RTOP+narrowPx],[xCE,RTOP]],'#fed7aa','#f97316',1);
+
+  // Cones along both edges of narrowing
+  s += cones(xTS,RTOP,xTE,RTOP+narrowPx,5);
+  s += cones(xCS,RTOP+narrowPx,xCE,RTOP,4);
+  // Cones along narrowed section
+  const conesN = Math.max(3,Math.round((xCS-xTE)/40));
+  for(let i=0;i<=conesN;i++) s += cone(xTE+(i/conesN)*(xCS-xTE),RTOP+narrowPx*0.5,5);
+
+  // Lane markings
+  for(let i=1;i<nLanes;i++) s += svgLine(0,RTOP+i*LANE_H,xEnd,RTOP+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+  s += svgLine(0,RTOP,xEnd,RTOP,'white',2);
+  s += svgLine(0,RBOT,xEnd,RBOT,'white',2);
+
+  // Flow arrows
+  for(let i=0;i<nLanes;i++) s += flowArrow((xWS+xWE)/2, RTOP+(i+0.5)*LANE_H, true);
+
+  // Signs
+  const signY = RTOP-46;
+  s += signBox(xS1, signY, [sgns.roadworkAhead.split('(')[0].trim()], 'warn');
+  s += signBox(xS2, signY, ['LANE NARROW AHEAD'], 'warn');
+  if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2, signY+12, vWork);
+  s += signBox(xSE, signY, [sgns.endRoadwork.split('(')[0].trim()], 'end');
+
+  // Dimensions — sign spacings and zones
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
+  s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
+  s += dimArr(xTE,DIMY+18,xCS,workLen+' m (narrowed zone)');
+  s += svgText(SVGW/2,RTOP+narrowPx/2+4,'Delineation devices','middle',8,'white',true);
+
+  s += svgText(30,RTOP-20,'→ Direction of Travel','start',9,'#1a365d',false);
+
+  return wrapSVG(s, SVGW, SVGH);
+}
+
+// ── CONTRAFLOW diagram ─────────────────────────────────────────────────────────
+
+function svgContraflow(p) {
+  const { LANE_H,SH,RTOP,DIMY,SVGW,xS1,xS2,xTS,xTE,xWS,xWE,xCS,xCE,xSE,
+          sp,mt,workLen,nLanes,sgns,vPosted,vWork } = p;
+
+  const rLanes = nLanes;
+  const rH = (rLanes+1)*LANE_H; // one extra lane from the other direction
+  const RBOT = RTOP+rH;
+  const SVGH = RBOT+SH+85;
+
+  let s = '';
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  s += svgRect(0,RTOP-SH,SVGW,SH,'#a7f3d0');
+  s += svgRect(0,RBOT,SVGW,SH,'#a7f3d0');
+  s += svgRect(0,RTOP,SVGW,rH,'#475569');
+
+  // Contraflow lane (bottom lane, opposing direction)
+  const cfLaneY = RTOP+(rLanes)*LANE_H;
+  s += svgRect(xTE,cfLaneY,xCE-xTE,LANE_H,'#1d4ed8','opacity="0.3"');
+  s += svgRect(xTE,cfLaneY,xCE-xTE,LANE_H,'url(#hBuf)');
+
+  // Work area on opposite side
+  s += svgRect(xWS,RTOP,xWE-xWS,LANE_H,'url(#hWork)');
+  s += svgRect(xWS,RTOP,xWE-xWS,LANE_H,'#ef4444','opacity="0.25"');
+
+  // Tapers
+  s += svgPoly([[xTS,RBOT-LANE_H],[xTE,RBOT],[xTE,RBOT-LANE_H]],'#fed7aa');
+  s += svgLine(xTS,RBOT-LANE_H,xTE,RBOT,'#f97316',2,'stroke-dasharray="6,3"');
+  s += cones(xTS,RBOT-LANE_H,xTE,RBOT,5);
+  s += svgPoly([[xCS,RBOT],[xCE,RBOT-LANE_H],[xCE,RBOT]],'#fed7aa');
+  s += svgLine(xCS,RBOT,xCE,RBOT-LANE_H,'#f97316',2,'stroke-dasharray="6,3"');
+  s += cones(xCS,RBOT,xCE,RBOT-LANE_H,4);
+
+  // Lane separators
+  for(let i=1;i<rLanes;i++) s += svgLine(0,RTOP+i*LANE_H,SVGW,RTOP+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+  // Solid line between normal and contraflow
+  s += svgLine(0,RTOP+rLanes*LANE_H,SVGW,RTOP+rLanes*LANE_H,'#fbbf24',2.5);
+  s += svgLine(0,RTOP,SVGW,RTOP,'white',2);
+  s += svgLine(0,RBOT,SVGW,RBOT,'white',2);
+
+  // Flow arrows
+  for(let i=0;i<rLanes;i++) s += flowArrow((xWS+xWE)/2,RTOP+(i+0.5)*LANE_H,true);
+  s += flowArrow((xWS+xWE)/2,cfLaneY+LANE_H/2,false); // opposing
+
+  // Labels
+  s += svgText((xWS+xWE)/2,RTOP+LANE_H/2+4,'WORK AREA','middle',8,'white',true);
+  s += svgText((xTE+xCS)/2,cfLaneY+LANE_H/2+4,'CONTRAFLOW LANE','middle',8,'#93c5fd',true);
+
+  const signY = RTOP-46;
+  s += signBox(xS1,signY,[sgns.roadworkAhead.split('(')[0].trim()],'warn');
+  s += signBox(xS2,signY,['CONTRAFLOW AHEAD'],'warn');
+  if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2,signY+12,vWork);
+  s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
+
+  s += dimArr(xTS,RBOT+35,xTE,mt+' m (taper)');
+  s += dimArr(xTE,RBOT+52,xCS,workLen+' m (contraflow zone)');
+  s += svgText(30,RTOP-20,'→ Normal Direction of Travel','start',9,'#1a365d',false);
+  s += svgText(30,RBOT+22,'← Contraflow Direction','start',9,'#1d4ed8',false);
+  s += svgText(SVGW-10,RTOP-20,'NOTE: Rigid separation (concrete barriers) required between opposing flows','end',8,'#dc2626',false);
+
+  return wrapSVG(s,SVGW,SVGH);
+}
+
+// ── WORKS IN SHOULDER diagram ──────────────────────────────────────────────────
+
+function svgShoulder(p) {
+  const { LANE_H,SH,RTOP,RBOT,DIMY,SVGH,SVGW,
+          xS1,xS2,xTS,xTE,xWS,xWE,xCS,xCE,xSE,xEnd,
+          sp,mt,ct,workLen,nLanes,sgns,vPosted,vWork } = p;
+
+  const shH = SH+10; // bigger shoulder area for visibility
+  const rTop2 = RTOP+shH; // road starts lower
+
+  let s = '';
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  // Shoulder zones
+  s += svgRect(0,RTOP,SVGW,shH,'#a7f3d0');     // shoulder (top)
+  s += svgRect(0,RBOT,SVGW,shH,'#a7f3d0');     // shoulder (bottom)
+  // Road
+  s += svgRect(0,rTop2,SVGW,nLanes*LANE_H,'#475569');
+
+  // Work area in top shoulder
+  s += svgRect(xWS,RTOP,xWE-xWS,shH,'url(#hWork)');
+  s += svgRect(xWS,RTOP,xWE-xWS,shH,'#ef4444','opacity="0.3"');
+
+  // Shoulder taper (cones along shoulder edge)
+  s += svgPoly([[xTS,RTOP+shH],[xTE,RTOP],[xTE,RTOP+shH],[xTS,RTOP+shH]],'#fed7aa','none',0);
+  s += svgLine(xTS,rTop2,xTE,RTOP,'#f97316',2,'stroke-dasharray="8,4"');
+  s += cones(xTS,rTop2,xTE,RTOP,Math.max(4,Math.round((xTE-xTS)/25)));
+  // End of shoulder section
+  s += svgLine(xCS,RTOP,xCE,rTop2,'#f97316',2,'stroke-dasharray="8,4"');
+  s += cones(xCS,RTOP,xCE,rTop2,Math.max(3,Math.round((xCE-xCS)/25)));
+
+  // Lane markings — road lanes stay open
+  for(let i=1;i<nLanes;i++) s += svgLine(0,rTop2+i*LANE_H,xEnd,rTop2+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+  s += svgLine(0,rTop2,xEnd,rTop2,'#fbbf24',2); // edge line
+  s += svgLine(0,RBOT,xEnd,RBOT,'white',2);
+
+  // Flow arrows (all lanes remain open)
+  for(let i=0;i<nLanes;i++) s += flowArrow((xWS+xWE)/2,rTop2+(i+0.5)*LANE_H,true);
+
+  // Labels
+  s += svgText((xWS+xWE)/2,RTOP+shH/2+4,'SHOULDER WORK','middle',8,'white',true);
+  s += svgText((xWS+xWE)/2,RTOP+shH/2+14,workLen+' m','middle',7,'#fca5a5',false);
+  s += svgText(SVGW/2,rTop2+nLanes*LANE_H/2+4,'Travel lanes remain open','middle',9,'white',false);
+
+  const signY = RTOP-46;
+  s += signBox(xS1,signY,[sgns.roadworkAhead.split('(')[0].trim()],'warn');
+  s += signBox(xS2,signY,['SHOULDER CLOSED'],'warn');
+  if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2,signY+12,vWork);
+  s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
+
+  s += dimArr(xS1,DIMY,xS2,sp+' m');
+  s += dimArr(xS2,DIMY,xTS,sp+' m');
+  s += dimArr(xTS,DIMY+18,xTE,mt+' m (taper)');
+  s += dimArr(xTE,DIMY+18,xWS,p.buf+' m (buffer)');
+  s += dimArr(xWS,DIMY+36,xWE,workLen+' m work area');
+
+  s += svgText(30,RTOP-20,'→ Direction of Travel','start',9,'#1a365d',false);
+  s += svgText(30,RTOP+4,'Shoulder','start',8,'#166534',false);
+
+  return wrapSVG(s,SVGW,SVGH);
+}
+
+// ── WORKS ON MEDIAN diagram ────────────────────────────────────────────────────
+
+function svgMedian(p) {
+  const { LANE_H,SH,SVGW,xS1,xS2,xTS,xTE,xWS,xWE,xCS,xCE,xSE,xEnd,
+          sp,mt,ct,buf,workLen,nLanes,sgns,vPosted,vWork } = p;
+
+  const medH = 22, RTOP = 60;
+  const rAH = nLanes*LANE_H;   // road A (approaching carriageway)
+  const rBY = RTOP+rAH+medH;   // road B top
+  const rBH = nLanes*LANE_H;
+  const RBOT = rBY+rBH;
+  const SVGH = RBOT+SH+90;
+
+  let s = '';
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+  s += svgRect(0,RTOP,SVGW,rAH,'#475569');       // Road A
+  s += svgRect(0,RTOP+rAH,SVGW,medH,'#6b7280');  // Median
+  s += svgRect(0,rBY,SVGW,rBH,'#475569');         // Road B
+
+  // Work area in median
+  s += svgRect(xWS,RTOP+rAH-4,xWE-xWS,medH+8,'url(#hWork)');
+  s += svgRect(xWS,RTOP+rAH-4,xWE-xWS,medH+8,'#ef4444','opacity="0.3"');
+
+  // Lane markings for both carriageways
+  for(let i=1;i<nLanes;i++){
+    s += svgLine(0,RTOP+i*LANE_H,SVGW,RTOP+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+    s += svgLine(0,rBY+i*LANE_H,SVGW,rBY+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+  }
+  s += svgLine(0,RTOP,SVGW,RTOP,'white',2);
+  s += svgLine(0,RTOP+rAH,SVGW,RTOP+rAH,'#fbbf24',2.5);
+  s += svgLine(0,rBY,SVGW,rBY,'#fbbf24',2.5);
+  s += svgLine(0,RBOT,SVGW,RBOT,'white',2);
+
+  // Flow arrows
+  for(let i=0;i<nLanes;i++){
+    s += flowArrow((xWS+xWE)/2,RTOP+(i+0.5)*LANE_H,true);
+    s += flowArrow((xWS+xWE)/2,rBY+(i+0.5)*LANE_H,false);
+  }
+
+  // Labels
+  s += svgText((xWS+xWE)/2,RTOP+rAH+medH/2+4,'MEDIAN WORK','middle',7.5,'white',true);
+  s += svgText(30,RTOP+rAH/2+4,'Approaching carriageway','start',8,'white',false);
+  s += svgText(30,rBY+rBH/2+4,'Opposing carriageway','start',8,'white',false);
+
+  const signY = RTOP-44;
+  s += signBox(xS1,signY,[sgns.roadworkAhead.split('(')[0].trim()],'warn');
+  s += signBox(xS2,signY,['MEDIAN WORKS'],'warn');
+  if(vWork && vWork<vPosted) s += speedSign((xS2+xTS)/2,signY+12,vWork);
+  s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
+
+  s += dimArr(xWS,RBOT+32,xWE,workLen+' m (median works)');
+  s += svgText(30,RTOP-22,'→ Direction of Travel','start',9,'#1a365d',false);
+
+  return wrapSVG(s,SVGW,SVGH);
+}
+
+// ── WORKS ON FOOTPATH diagram ──────────────────────────────────────────────────
+
+function svgFootpath(p) {
+  const { LANE_H,SVGW,xS1,xWS,xWE,xSE,sp,workLen,nLanes,sgns,vPosted } = p;
+
+  const fpH=20, swH=30, RTOP=60;
+  const roadH = nLanes*LANE_H;
+  const roadY = RTOP+fpH+swH;   // road below footpath/nature strip
+  const SVGH  = roadY+roadH+fpH+swH+90;
+
+  let s = '';
+  s += svgRect(0,0,SVGW,SVGH,'#d1fae5');
+
+  // Footpath (top)
+  s += svgRect(0,RTOP,SVGW,fpH,'#d1d5db');
+  // Nature strip (top)
+  s += svgRect(0,RTOP+fpH,SVGW,swH,'#a7f3d0');
+  // Road
+  s += svgRect(0,roadY,SVGW,roadH,'#475569');
+  // Nature strip (bottom)
+  s += svgRect(0,roadY+roadH,SVGW,swH,'#a7f3d0');
+  // Footpath (bottom)
+  s += svgRect(0,roadY+roadH+swH,SVGW,fpH,'#d1d5db');
+
+  // Work zone on footpath (hoarding/fencing area)
+  s += svgRect(xWS,RTOP,xWE-xWS,fpH,'url(#hWork)');
+  s += svgRect(xWS,RTOP,xWE-xWS,fpH,'#ef4444','opacity="0.3"');
+
+  // Hoarding/fence symbols
+  for(let x2=xWS;x2<xWE;x2+=12){
+    s += svgLine(x2,RTOP,x2,RTOP+fpH,'#92400e',1.5);
+  }
+  s += svgLine(xWS,RTOP+fpH,xWE,RTOP+fpH,'#92400e',2);
+
+  // Pedestrian detour arrow (around work area, via road side of nature strip)
+  const detourY = RTOP+fpH+swH-8;
+  s += svgLine(xWS-20,detourY,xWE+20,detourY,'#1d4ed8',2,'stroke-dasharray="8,4"');
+  s += svgText((xWS+xWE)/2,detourY-5,'Pedestrian detour path (ACROD compliant)','middle',8,'#1d4ed8',true);
+
+  // Lane markings
+  for(let i=1;i<nLanes;i++) s += svgLine(0,roadY+i*LANE_H,SVGW,roadY+i*LANE_H,'white',1.5,'stroke-dasharray="14,9"');
+  s += svgLine(0,roadY,SVGW,roadY,'white',2);
+  s += svgLine(0,roadY+roadH,SVGW,roadY+roadH,'white',2);
+  for(let i=0;i<nLanes;i++) s += flowArrow(SVGW/2,roadY+(i+0.5)*LANE_H,true);
+
+  const signY = RTOP-44;
+  s += signBox(xS1,signY,[sgns.roadworkAhead.split('(')[0].trim()],'warn');
+  s += signBox((xWS+xWE)/2,signY,['FOOTPATH CLOSED','USE OTHER SIDE'],'warn');
+  s += signBox(xSE,signY,[sgns.endRoadwork.split('(')[0].trim()],'end');
+
+  s += svgText(SVGW-10,RTOP+fpH/2+4,'Footpath (works)','end',8,'#7f1d1d',false);
+  s += svgText(SVGW-10,roadY-swH/2+4,'Nature strip','end',8,'#166534',false);
+  s += svgText(SVGW-10,roadY+roadH/2+4,'Carriageway (open)','end',8,'white',false);
+  s += dimArr(xWS,roadY+roadH+swH+32,xWE,workLen+' m (footpath works)');
+
+  return wrapSVG(s,SVGW,SVGH);
+}
+
+// ── CAR PARK OCCUPATION diagram ────────────────────────────────────────────────
+
+function svgCarpark(p) {
+  // Parking lane on near/signage side (top of plan view) — travel lanes below
+  const { sp, workLen, nLanes } = p;
+
+  const LM=50, RM=50, AVAIL=820;
+  const LANE_H=38, PARK_H=32, KERB_H=8, MED_H=18, SH=22;
+  const SVG_W = AVAIL + LM + RM;
+
+  // Near side (top): signs → shoulder → parking lane → kerb → median strip → travel lanes
+  const PARK_TOP   = 80;
+  const SIGN_CY    = Math.round(PARK_TOP - SH / 2);
+  const PARK_BOT   = PARK_TOP + PARK_H;
+  const KERB_TOP   = PARK_BOT;
+  const KERB_BOT   = KERB_TOP + KERB_H;
+  const MEDIAN_TOP = KERB_BOT;
+  const MEDIAN_BOT = MEDIAN_TOP + MED_H;
+  const ROAD_TOP   = MEDIAN_BOT;
+  const roadH      = nLanes * LANE_H;
+  const ROAD_BOT   = ROAD_TOP + roadH;
+  const DIM_Y      = ROAD_BOT + 30;
+  const SVG_H      = ROAD_BOT + 70;
+
+  const total = sp + sp + workLen + sp;
+  const sc = AVAIL / total;
+  function X(d) { return LM + d * sc; }
+  const xS1 = X(0);
+  const xS2 = X(sp);
+  const xWS = X(2 * sp);
+  const xWE = X(2 * sp + workLen);
+  const xSE = X(2 * sp + workLen + sp);
+
+  let s = '';
+  // Background
+  s += svgRect(0, 0, SVG_W, SVG_H, '#d1fae5');
+  // Shoulder / sign strip above parking (near side)
+  s += svgRect(0, PARK_TOP - SH, SVG_W, SH, '#bbf7d0');
+
+  // Parking lane — full width background (near/signage side, above travel lanes)
+  s += svgRect(0, PARK_TOP, SVG_W, PARK_H, '#e2e8f0');
+  const bayW = 24;
+  for (let bx = LM; bx < SVG_W - RM; bx += bayW) s += svgLine(bx, PARK_TOP, bx, PARK_BOT, '#9ca3af', 0.8);
+
+  // Open parking labels
+  if (xWS > xS1 + 10) s += svgText((xS1 + xWS) / 2, PARK_TOP + PARK_H / 2 + 3, 'PARKING OPEN', 'middle', 7, '#374151', false);
+  if (xSE > xWE + 10) s += svgText((xWE + xSE) / 2, PARK_TOP + PARK_H / 2 + 3, 'PARKING OPEN', 'middle', 7, '#374151', false);
+
+  // Works section of parking lane (closed)
+  s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, 'url(#hWork)');
+  s += svgRect(xWS, PARK_TOP, xWE - xWS, PARK_H, '#ef4444', 'opacity="0.28"');
+  s += svgText((xWS + xWE) / 2, PARK_TOP + PARK_H / 2 + 3, 'WORKS — NO STOPPING', 'middle', 7.5, '#7f1d1d', true);
+
+  // Cones along kerb edge (bottom of parking lane) and outer edge (top of parking lane)
+  const nC = Math.max(3, Math.round((xWE - xWS) / 28));
+  for (let ci = 0; ci <= nC; ci++) {
+    const cx = xWS + (ci / nC) * (xWE - xWS);
+    s += cone(cx, PARK_TOP + 2, 5);
+    s += cone(cx, PARK_BOT - 2, 5);
+  }
+  s += svgLine(xWS, PARK_TOP, xWS, PARK_BOT, '#f97316', 2.5);
+  s += svgLine(xWE, PARK_TOP, xWE, PARK_BOT, '#f97316', 2.5);
+
+  // Parking lane boundary lines
+  s += svgLine(0, PARK_TOP, SVG_W, PARK_TOP, '#6b7280', 1.5);
+  s += svgLine(0, PARK_BOT, SVG_W, PARK_BOT, '#374151', 2);
+  s += svgText(8, PARK_TOP - SH - 4, 'Parking Lane (near/signage side)', 'start', 7.5, '#374151', false);
+
+  // Kerb strip (between parking lane and median strip)
+  s += svgRect(0, KERB_TOP, SVG_W, KERB_H, '#94a3b8');
+  s += svgLine(0, KERB_TOP, SVG_W, KERB_TOP, '#475569', 1);
+  s += svgLine(0, KERB_BOT, SVG_W, KERB_BOT, '#475569', 1);
+  s += svgText(SVG_W / 2, KERB_TOP + KERB_H / 2 + 2, 'KERB', 'middle', 6, '#1e293b', true);
+
+  // Median strip (between kerb and travel lanes)
+  s += svgRect(0, MEDIAN_TOP, SVG_W, MED_H, '#86efac');
+  // Median hatch markings
+  for (let mx = LM; mx < SVG_W - RM; mx += 22) {
+    s += svgLine(mx, MEDIAN_TOP + 2, mx + 8, MEDIAN_BOT - 2, '#16a34a', 1, 'opacity="0.55"');
+  }
+  s += svgLine(0, MEDIAN_BOT, SVG_W, MEDIAN_BOT, '#f59e0b', 2);
+  s += svgText(SVG_W / 2, MEDIAN_TOP + MED_H / 2 + 2, 'MEDIAN STRIP', 'middle', 6.5, '#14532d', true);
+
+  // Travel lane(s) — below kerb (far side)
+  s += svgRect(0, ROAD_TOP, SVG_W, roadH, '#546e7a');
+  for (let i = 1; i < nLanes; i++) s += svgLine(0, ROAD_TOP + i*LANE_H, SVG_W, ROAD_TOP + i*LANE_H, 'white', 1.5, 'stroke-dasharray="18,10" opacity="0.7"');
+  s += svgLine(0, ROAD_TOP, SVG_W, ROAD_TOP, 'white', 2.5);
+  s += svgLine(0, ROAD_BOT, SVG_W, ROAD_BOT, 'white', 2);
+  s += flowArrow(SVG_W / 2, ROAD_TOP + roadH / 2, true);
+  s += svgText(SVG_W / 2, ROAD_TOP + roadH / 2 + 4, 'TRAVEL LANE' + (nLanes > 1 ? 'S' : '') + ' — OPEN', 'middle', 8, 'white', false);
+
+  // MMS signs in shoulder strip (no posts)
+  s += aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    {type:'warn', lines:['NO','STOPPING']}
+  ]);
+  s += aMMS(xS2, SIGN_CY, [{type:'warn', lines:['NO','STOPPING']}]);
+  s += aMMS(xSE, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
+
+  s += dimArr(xWS, DIM_Y + 10, xWE, workLen + ' m');
+
+  s += svgText(LM, PARK_TOP - SH - 14, '→ Direction of Travel', 'start', 9, '#1a365d', true);
+  s += svgText(SVG_W - RM, PARK_TOP - SH - 14, 'PARKING LANE WORKS', 'end', 8, '#546e7a', false);
+  s += svgText(5, SVG_H - 10, 'NOTE: Parking lane bays closed with cones/drums. Travel lanes remain fully open.', 'start', 7, '#4b5563', false);
+
+  return wrapSVG(s, SVG_W, SVG_H);
+}
+
+// ── FULL ROAD CLOSURE ──────────────────────────────────────────────────────────
+
+function svgRoadClosure(p) {
+  var sp=p.sp, workLen=p.workLen, vPosted=p.vPosted, vWork=p.vWork;
+  var nL=Math.max(1,p.nLanes||1);
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=22;
+  var ROAD_TOP=90, roadH=(nL*2)*LANE_H, ROAD_BOT=ROAD_TOP+roadH;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var SVG_W=AVAIL+LM+RM, SVG_H=ROAD_BOT+100;
+
+  var total=sp+workLen+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xWS=X(sp), xWE=X(sp+workLen), xSE=X(sp+workLen+sp);
+  var midY=ROAD_TOP+roadH/2;
+  var s='';
+
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_TOP,SVG_W,roadH,'#546e7a');
+  s+=svgLine(0,midY,SVG_W,midY,'#fbbf24',2.5);
+  for(var i=1;i<nL*2;i++){
+    if(i!==nL) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.2,'stroke-dasharray="18,10" opacity="0.6"');
+  }
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,roadH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,roadH,'#ef4444','opacity="0.35"');
+  s+=svgLine(xWS,ROAD_TOP,xWS,ROAD_BOT,'#dc2626',3);
+  s+=svgLine(xWE,ROAD_TOP,xWE,ROAD_BOT,'#dc2626',3);
+  s+=aFlow((xS1+xWS)*0.55,ROAD_TOP+LANE_H/2,true);
+  s+=aFlow((xWE+xSE)*0.55,midY+LANE_H/2,false);
+  s+=svgText((xWS+xWE)/2,midY+4,'ROAD CLOSED — DETOUR REQUIRED','middle',9,'white',true);
+  if(xWE-xWS>80) s+=svgText((xWS+xWE)/2,midY+16,workLen+'m','middle',8,'#fca5a5',false);
+
+  s+=aMMS(xS1, SIGN_CY, [
+    {type:'warn', lines:['ROAD','WORK','AHEAD']},
+    {type:'red',  lines:['ROAD','CLOSED']},
+    {type:'warn', lines:['FOLLOW','DETOUR']}
+  ]);
+  s+=aMMS(xSE, SIGN_CY, [
+    {type:'end', lines:['END','ROAD','WORK']},
+    {type:'end', lines:['DRIVE','SAFELY']}
+  ]);
+
+  s+=svgText(LM,ROAD_TOP-SH-14,'→ / ← Both directions — Detour required','start',9,'#dc2626',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-14,'FULL ROAD CLOSURE — '+(p.state||''),'end',8,'#546e7a',false);
+  s+=svgText(SVG_W/2,SVG_H-10,'NOTE: Full road closure requires an approved detour route and Traffic Guidance Scheme prepared by a competent person.','middle',7,'#4b5563',false);
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+// ── LEGEND ─────────────────────────────────────────────────────────────────────
+
+function tmpLegend() {
+  const items = [
+    {type:'box',col:'#475569',label:'Open road lane'},
+    {type:'hatch',cols:['#ef4444','white'],label:'Work area (closed)'},
+    {type:'box',col:'#fef3c7',label:'Buffer / clearance zone'},
+    {type:'box',col:'#fed7aa',label:'Taper zone'},
+    {type:'line',col:'#f97316',label:'Cone / barrier line'},
+    {type:'box',col:'#1d4ed8',label:'Contraflow / two-way',op:0.3},
+    {type:'box',col:'#d1fae5',label:'Ground / verge'},
+    {type:'box',col:'#d1d5db',label:'Footpath / kerb zone'},
+  ];
+  let s = '<div class="tmp-legend">';
+  for(const it of items){
+    let box = '';
+    if(it.type==='box'){
+      box = `<div class="lg-box" style="background:${it.col};opacity:${it.op||1}"></div>`;
+    } else if(it.type==='hatch') {
+      box = `<div class="lg-box" style="background:repeating-linear-gradient(45deg,${it.cols[0]},${it.cols[0]} 3px,${it.cols[1]} 3px,${it.cols[1]} 6px)"></div>`;
+    } else {
+      box = `<div class="lg-line" style="background:${it.col};border-radius:2px"></div>`;
+    }
+    s += `<div class="lg-item">${box}<span>${it.label}</span></div>`;
+  }
+  return s + '</div>';
+}
+
+// ── Main entry point ───────────────────────────────────────────────────────────
+
+function generateTMPDiagram(p) {
+  const { state, tmpType, vPosted, vWork, numLanes, laneW, mt, ct, buf, sp, D, Q, works, sgns, workLen } = p;
+  const tcMethod = p.tcMethod || 'tc';
+  const typeName = TMP_NAMES[tmpType] || tmpType;
+  const regNote  = (TMP_REG[tmpType]||{})[state] || (TMP_REG[tmpType]||{}).VIC || '';
+  const nL = Math.max(1, Math.min(numLanes||2, 4));
+
+  // Compute geometry
+  const geo = tmGeo(mt, ct, buf, sp, workLen, nL);
+  const params = { ...p, ...geo, nLanes:nL, tcMethod };
+
+  let svgContent = '';
+  try {
+    const useAGTTM = isAGTTM(state);
+    switch(tmpType) {
+      case 'lane-closure':
+        svgContent = useAGTTM ? svgAgttmLaneClosure(params) : svgLaneClosure(params); break;
+      case 'lane-narrow':
+        svgContent = useAGTTM ? svgAgttmLaneNarrow(params) : svgLaneNarrow(params); break;
+      case 'shuttleflow':
+        svgContent = useAGTTM ? svgAgttmShuttleflow(params) : svgShuttleflow(params); break;
+      case 'contraflow':
+        svgContent = useAGTTM ? svgAgttmContraflow(params) : svgContraflow(params); break;
+      case 'shoulder':
+        svgContent = useAGTTM ? svgAgttmShoulder(params) : svgShoulder(params); break;
+      case 'median':      svgContent = svgMedian(params);        break;
+      case 'footpath':    svgContent = svgFootpath(params);       break;
+      case 'carpark':     svgContent = svgCarpark(params);        break;
+      case 'road-closure': svgContent = svgRoadClosure(params);   break;
+      default:
+        svgContent = useAGTTM ? svgAgttmLaneClosure(params) : svgLaneClosure(params);
+    }
+  } catch(e) {
+    svgContent = `<div class="box box-warn">Diagram error: ${e.message}</div>`;
+  }
+
+  // Key dimension badges
+  const badges = [
+    mt ? `<span class="dim-badge">Merge Taper: ${mt} m</span>` : '',
+    ct ? `<span class="dim-badge">Closing Taper: ${ct} m</span>` : '',
+    buf ? `<span class="dim-badge">Buffer: ${buf} m</span>` : '',
+    sp ? `<span class="dim-badge">Sign Spacing: ${sp} m</span>` : '',
+    D  ? `<span class="dim-badge">D: ${D} m</span>` : '',
+  ].filter(Boolean).join('');
+
+  const useAGTTM2 = isAGTTM(state);
+  const agttmNotes = useAGTTM2 ? `
+    <div style="margin-top:14px;border:2px solid #1d4ed8;border-radius:8px;background:#eff6ff;padding:12px 16px">
+      <div style="font-weight:800;color:#1d4ed8;font-size:.82rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">AGTTM Notes — ${state}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">BOLLARD SPACING</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Posted Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Spacing</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">≤ 55 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">4 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">56–75 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">12 m</td></tr>
+            <tr><td style="padding:2px 6px">≥ 76 km/h</td><td style="padding:2px 6px">18 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">TAPER LENGTHS (Table 5.7)</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Taper</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">50 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">30 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">70 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">115 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">80 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">130 m</td></tr>
+            <tr><td style="padding:2px 6px">100 km/h</td><td style="padding:2px 6px">160 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:1;min-width:220px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:4px">BUFFER ZONE (Table 5.8)</div>
+          <table style="font-size:.75rem;width:100%;border-collapse:collapse">
+            <tr><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Speed</th><th style="text-align:left;padding:2px 6px;background:#dbeafe;color:#1e40af">Buffer</th></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">≤ 45 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">10 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">50 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">30 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">60 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">70 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">105 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">80 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">120 m</td></tr>
+            <tr><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">100 km/h</td><td style="padding:2px 6px;border-bottom:1px solid #e0f2fe">150 m</td></tr>
+            <tr><td style="padding:2px 6px">110 km/h</td><td style="padding:2px 6px">165 m</td></tr>
+          </table>
+        </div>
+        <div style="flex:2;min-width:240px;background:#fff;border-radius:6px;padding:8px 12px;border:1px solid #bfdbfe">
+          <div style="font-weight:700;font-size:.78rem;color:#1e40af;margin-bottom:6px">GENERAL NOTES</div>
+          <ul style="font-size:.76rem;color:#1e3a5f;line-height:1.6;padding-left:16px;margin:0">
+            <li>LSM spacing = <strong>24 m</strong> within the taper</li>
+            <li style="color:#dc2626;font-weight:700">Double signage to be used where possible</li>
+            <li>Speed signs in MMS to be displayed on the <strong>traffic side</strong></li>
+            <li style="color:#92400e">Some distances may not be to code due to network restraints</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#1d4ed8;color:#fff;border-radius:6px;padding:8px 14px;font-size:.79rem;font-weight:700;text-align:center;letter-spacing:.02em">
+        PEDESTRIANS ARE TO BE ESCORTED BY TC's PAST THE WORKS AREAS AS REQUIRED
+      </div>
+    </div>` : '';
+
+  return `
+    <div class="diagram-title">${typeName} — ${state} — ${vPosted} km/h${vWork && vWork<vPosted ? ' → '+vWork+' km/h' : ''} — ${nL} lane${nL>1?'s':''} per direction — ${works==='short'?'Short Term':works==='long'?'Long Term':'Mobile'} Works</div>
+    ${regNote ? `<div class="box box-info mb12" style="font-size:.8rem">${regNote}</div>` : ''}
+    <div style="margin-bottom:10px">${badges}</div>
+    <div class="diagram-scroll">${svgContent}</div>
+    ${tmpLegend()}
+    ${agttmNotes}
+    <p class="ref-note" style="margin-top:10px">
+      This diagram is a schematic guide only. A formal Traffic Guidance Scheme (TGS) / Traffic Management Plan (TMP)
+      must be prepared and approved by a competent person in accordance with the applicable state regulations.
+      Dimensions shown are calculated estimates — verify on site.
+    </p>
+  `;
+}
+
+// ═══════════════ PDF / SHARE ════════════════════════════════════════════════════
+
+function doPrint() { window.print(); }
+
+async function doShare() {
+  const title = 'Traffic Management Calculation — ' + state + ' ' + n('postedSpeed') + ' km/h';
+  const text = [
+    'Traffic Management Calculator Results',
+    'State: ' + (STATE_INFO[state]||{}).name,
+    'Posted Speed: ' + n('postedSpeed') + ' km/h',
+    'Work Zone Speed: ' + (v('workSpeed')||'No reduction'),
+    'Refer to printed report for full details.',
+  ].join('\n');
+  if (navigator.share) {
+    try { await navigator.share({ title, text }); } catch(e) { if(e.name!=='AbortError') doPrint(); }
+  } else { doPrint(); }
+}
+
+// ═══════════════ AGTTM-STYLE DIAGRAMS (VIC / SA / TAS / NT / ACT) ═══════════════
+
+function onTmpTypeChange(val) {
+  const needsCtrl = ['shuttleflow','contraflow','road-closure'].includes(val);
+  document.getElementById('tcMethodGroup').style.display = needsCtrl ? 'block' : 'none';
+}
+
+function isAGTTM(st) {
+  return ['VIC','SA','TAS','NT','ACT'].includes(st);
+}
+
+// Orange (or custom colour) warning diamond sign — proper AGTTM-style
+function aDiamond(cx, cy, lines, col, strokeCol) {
+  col = col || '#f97316'; strokeCol = strokeCol || '#7c2d12';
+  var s2 = 30;
+  var pts = r(cx)+','+r(cy-s2)+' '+r(cx+s2)+','+r(cy)+' '+r(cx)+','+r(cy+s2)+' '+r(cx-s2)+','+r(cy);
+  // Outer border ring
+  var s2o = s2+3;
+  var ptsO = r(cx)+','+r(cy-s2o)+' '+r(cx+s2o)+','+r(cy)+' '+r(cx)+','+r(cy+s2o)+' '+r(cx-s2o)+','+r(cy);
+  var out = '<polygon points="'+ptsO+'" fill="'+strokeCol+'" stroke="none"/>';
+  out += '<polygon points="'+pts+'" fill="'+col+'" stroke="none"/>';
+  var lh = 9.5, nL = lines.length;
+  var startY = cy - (nL - 1) * lh / 2;
+  lines.forEach(function(l, i) {
+    out += '<text x="'+r(cx)+'" y="'+r(startY + i*lh + 3)+'" text-anchor="middle" font-size="8" font-weight="bold" fill="white" letter-spacing="0.3">'+l+'</text>';
+  });
+  return out;
+}
+
+// Red-bordered speed limit circle — proper Australian speed sign
+function aSpeed(cx, cy, spd) {
+  var fs = (spd >= 100) ? 11 : 13;
+  // White background circle, thick red border, black number
+  return '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="22" fill="#dc2626"/>'+
+         '<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="18" fill="white"/>'+
+         '<text x="'+r(cx)+'" y="'+r(cy+5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+spd+'</text>';
+}
+
+// Green END ROAD WORK diamond
+function aEndSign(cx, cy) {
+  return aDiamond(cx, cy, ['END','ROAD','WORK'], '#16a34a', '#14532d');
+}
+
+// Sign post stem — solid post line from sign bottom to road edge
+function aStem(cx, botY, roadY) {
+  return '<line x1="'+r(cx)+'" y1="'+r(botY)+'" x2="'+r(cx)+'" y2="'+r(roadY)+'" stroke="#374151" stroke-width="2" stroke-dasharray="4,3"/>';
+}
+
+// Dimension label with tick marks between x1 and x2 at height y
+function aDim(x1, x2, y, label) {
+  var mx = (x1+x2)/2;
+  return '<line x1="'+r(x1+1)+'" y1="'+r(y)+'" x2="'+r(x2-1)+'" y2="'+r(y)+'" stroke="#1e3a8a" stroke-width="1"/>'+
+         '<line x1="'+r(x1)+'" y1="'+r(y-4)+'" x2="'+r(x1)+'" y2="'+r(y+4)+'" stroke="#1e3a8a" stroke-width="1.5"/>'+
+         '<line x1="'+r(x2)+'" y1="'+r(y-4)+'" x2="'+r(x2)+'" y2="'+r(y+4)+'" stroke="#1e3a8a" stroke-width="1.5"/>'+
+         '<text x="'+r(mx)+'" y="'+r(y-6)+'" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#1e3a8a">'+label+'</text>';
+}
+
+// Traffic Controller figure — detailed person with STOP/SLOW baton
+function aTC(cx, cy) {
+  // Hi-vis vest (orange torso)
+  var out = '';
+  // Head
+  out += '<circle cx="'+r(cx)+'" cy="'+r(cy-22)+'" r="7" fill="#fde68a" stroke="#92400e" stroke-width="1.2"/>';
+  // Torso (hi-vis orange)
+  out += '<rect x="'+r(cx-7)+'" y="'+r(cy-14)+'" width="14" height="16" rx="2" fill="#f97316" stroke="#c2410c" stroke-width="1"/>';
+  // Arms
+  out += '<line x1="'+r(cx-7)+'" y1="'+r(cy-10)+'" x2="'+r(cx-14)+'" y2="'+r(cy-4)+'" stroke="#92400e" stroke-width="2.5"/>'; // left arm
+  out += '<line x1="'+r(cx+7)+'" y1="'+r(cy-10)+'" x2="'+r(cx+16)+'" y2="'+r(cy-2)+'" stroke="#92400e" stroke-width="2.5"/>'; // right arm holding baton
+  // STOP baton (red circle on top)
+  out += '<circle cx="'+r(cx+18)+'" cy="'+r(cy-4)+'" r="8" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>';
+  out += '<text x="'+r(cx+18)+'" y="'+r(cy-2)+'" text-anchor="middle" font-size="5.5" font-weight="bold" fill="white">STOP</text>';
+  // Legs
+  out += '<line x1="'+r(cx-4)+'" y1="'+r(cy+2)+'" x2="'+r(cx-5)+'" y2="'+r(cy+14)+'" stroke="#1e3a8a" stroke-width="2.5"/>';
+  out += '<line x1="'+r(cx+4)+'" y1="'+r(cy+2)+'" x2="'+r(cx+5)+'" y2="'+r(cy+14)+'" stroke="#1e3a8a" stroke-width="2.5"/>';
+  out += '<text x="'+r(cx)+'" y="'+r(cy+26)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#1e3a8a">TC</text>';
+  return out;
+}
+
+// Portable Traffic Lights / Portable Boom symbol
+function aPTL(cx, cy, label) {
+  label = label || 'PTL';
+  var isBoom = (label === 'BOOM');
+  var out = '';
+  // Post
+  out += '<line x1="'+r(cx)+'" y1="'+r(cy-26)+'" x2="'+r(cx)+'" y2="'+r(cy+16)+'" stroke="#374151" stroke-width="3"/>';
+  // Housing
+  out += '<rect x="'+r(cx-10)+'" y="'+r(cy-26)+'" width="20" height="34" rx="3" fill="#111827" stroke="#374151" stroke-width="1.5"/>';
+  if (isBoom) {
+    // Boom gate bar
+    out += '<rect x="'+r(cx-8)+'" y="'+r(cy-20)+'" width="28" height="5" rx="2" fill="#f97316" stroke="#c2410c" stroke-width="1"/>';
+    out += '<text x="'+r(cx)+'" y="'+r(cy+28)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#f97316">BOOM</text>';
+  } else {
+    // Traffic light lenses
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy-17)+'" r="5" fill="#ef4444"/>'; // red
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy-5)+'" r="5" fill="#9ca3af" opacity="0.4"/>'; // amber off
+    out += '<circle cx="'+r(cx)+'" cy="'+r(cy+7)+'" r="5" fill="#9ca3af" opacity="0.4"/>'; // green off
+    out += '<text x="'+r(cx)+'" y="'+r(cy+28)+'" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#1e3a8a">PTL</text>';
+  }
+  return out;
+}
+
+// Control point symbol — TC figure or PTL/Boom based on tcMethod
+function aCtrl(cx, cy, tcMethod) {
+  if (tcMethod === 'ptl') return aPTL(cx, cy, 'PTL');
+  if (tcMethod === 'boom') return aPTL(cx, cy, 'BOOM');
+  return aTC(cx, cy);
+}
+
+// Single orange traffic cone
+function aCone(cx, cy, sz) {
+  sz = sz || 8;
+  return '<polygon points="'+r(cx)+','+r(cy-sz)+' '+r(cx-sz*0.6)+','+r(cy+sz*0.5)+' '+r(cx+sz*0.6)+','+r(cy+sz*0.5)+'" fill="#f97316" stroke="#c2410c" stroke-width="0.8"/>';
+}
+
+// Spread n cones along a line segment
+function aCones(x1, y1, x2, y2, n, sz) {
+  n = n || 5; sz = sz || 7;
+  var s = '';
+  for (var i = 0; i <= n; i++) {
+    var t = i/n;
+    s += aCone(x1 + t*(x2-x1), y1 + t*(y2-y1), sz);
+  }
+  return s;
+}
+
+// Blue traffic flow arrow
+function aFlow(cx, cy, rightDir) {
+  rightDir = (rightDir !== false);
+  var d = rightDir ? 1 : -1;
+  return '<polygon points="'+r(cx+d*14)+','+r(cy)+' '+r(cx)+','+r(cy-6)+' '+r(cx)+','+r(cy+6)+'" fill="#60a5fa" opacity="0.85"/>'+
+         '<line x1="'+r(cx-d*10)+'" y1="'+r(cy)+'" x2="'+r(cx+d*4)+'" y2="'+r(cy)+'" stroke="#60a5fa" stroke-width="2.5" opacity="0.85"/>';
+}
+
+// Multi Message Sign (MMS) — plan-view (bird's eye) representation for AGTTM
+// Shown as stacked rectangular panels in a dark frame, placed at road shoulder.
+// No posts/stems — signs sit at road edge level.
+// panels: [{type:'warn'|'speed'|'end'|'red', lines:[], spd:N}]
+function aMMS(cx, cy, panels) {
+  var PW = 30, PH = 11, GAP = 1.5, PAD = 3;
+  var nP = panels.length;
+  var innerH = nP * PH + Math.max(0, nP - 1) * GAP;
+  var frameW = PW + PAD * 2;
+  var frameH = innerH + PAD * 2;
+  var fx = cx - frameW / 2;
+  var fy = cy - frameH / 2;
+  var s = '';
+  // MMS cabinet frame (dark — represents the trailer/stand unit)
+  s += '<rect x="'+r(fx)+'" y="'+r(fy)+'" width="'+r(frameW)+'" height="'+r(frameH)+'" rx="2.5" fill="#374151" stroke="#111827" stroke-width="1.5"/>';
+  panels.forEach(function(p, i) {
+    var py = fy + PAD + i * (PH + GAP);
+    var px = fx + PAD;
+    if (p.type === 'speed') {
+      // White panel with red speed circle
+      s += '<rect x="'+r(px)+'" y="'+r(py)+'" width="'+r(PW)+'" height="'+r(PH)+'" fill="white"/>';
+      var rs = PH * 0.38;
+      s += '<circle cx="'+r(px+PW/2)+'" cy="'+r(py+PH/2)+'" r="'+r(rs+2.2)+'" fill="#dc2626"/>';
+      s += '<circle cx="'+r(px+PW/2)+'" cy="'+r(py+PH/2)+'" r="'+r(rs)+'" fill="white"/>';
+      var sfs = String(p.spd).length > 2 ? 4.5 : 5.8;
+      s += '<text x="'+r(px+PW/2)+'" y="'+r(py+PH/2+2.2)+'" text-anchor="middle" font-size="'+sfs+'" font-weight="900" fill="#111">'+p.spd+'</text>';
+    } else {
+      var bg = p.type === 'end' ? '#16a34a' : p.type === 'red' ? '#dc2626' : p.type === 'blue' ? '#1d4ed8' : '#f97316';
+      var fg = 'white';
+      s += '<rect x="'+r(px)+'" y="'+r(py)+'" width="'+r(PW)+'" height="'+r(PH)+'" fill="'+bg+'"/>';
+      var nL = (p.lines||[]).length;
+      var lh = nL > 0 ? (PH - 2) / nL : PH;
+      (p.lines||[]).forEach(function(l, li) {
+        s += '<text x="'+r(px+PW/2)+'" y="'+r(py + 1 + (li + 0.82) * lh)+'" text-anchor="middle" font-size="5" font-weight="bold" fill="'+fg+'">'+l+'</text>';
+      });
+    }
+  });
+  return s;
+}
+
+// Zone label band — plan view zone identifier strip
+function zoneLabel(x1, x2, y, label, col) {
+  var w = x2 - x1;
+  if (w < 4) return '';
+  var s = '<rect x="'+r(x1)+'" y="'+r(y)+'" width="'+r(w)+'" height="11" fill="'+col+'" opacity="0.82"/>';
+  s += '<rect x="'+r(x1)+'" y="'+r(y)+'" width="'+r(w)+'" height="11" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>';
+  if (w > 38) s += '<text x="'+r(x1+w/2)+'" y="'+r(y+8)+'" text-anchor="middle" font-size="5.5" font-weight="bold" fill="white">'+label+'</text>';
+  return s;
+}
+
+// ── AGTTM Plan-View Sign Shapes ───────────────────────────────────────────────
+// Individual sign faces drawn in plan view (bird's-eye).
+// Signs placed in shoulder area; speed signs nearest traffic as per AGTTM.
+
+// Warning diamond — RWA, Works Marker, Traffic Controller Ahead, etc.
+function aWarnSign(cx, cy, lines) {
+  var d=13;
+  var pts=r(cx)+','+r(cy-d)+' '+r(cx+d)+','+r(cy)+' '+r(cx)+','+r(cy+d)+' '+r(cx-d)+','+r(cy);
+  var s='<polygon points="'+pts+'" fill="#f97316" stroke="#7c2d12" stroke-width="1.2"/>';
+  var n=lines.length, lh=Math.min(d*0.68, 5);
+  var y0=cy-(n-1)*lh/2+1.2;
+  lines.forEach(function(l,i){
+    s+='<text x="'+r(cx)+'" y="'+r(y0+i*lh)+'" text-anchor="middle" font-size="3.5" font-weight="bold" fill="white">'+l+'</text>';
+  });
+  return s;
+}
+
+// Speed limit circle — Australian standard: white bg, red ring, black number
+function aSpdSign(cx, cy, spd) {
+  var s='<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="10" fill="#dc2626"/>';
+  s+='<circle cx="'+r(cx)+'" cy="'+r(cy)+'" r="8" fill="white"/>';
+  var fs=String(spd).length>2?4.5:6;
+  s+='<text x="'+r(cx)+'" y="'+r(cy+2.3)+'" text-anchor="middle" font-size="'+fs+'" font-weight="900" fill="#111">'+spd+'</text>';
+  return s;
+}
+
+// Rectangular sign — PTS, ERW, WM, LSM, TC, Lane Status, etc.
+function aRectSign(cx, cy, lines, bg, fg, w, h) {
+  bg=bg||'white'; fg=fg||'#111'; w=w||26; h=h||15;
+  var border=(bg==='white'||bg==='#fff')?'#333':fg;
+  var s='<rect x="'+r(cx-w/2)+'" y="'+r(cy-h/2)+'" width="'+r(w)+'" height="'+r(h)+'" fill="'+bg+'" stroke="'+border+'" stroke-width="1" rx="1.5"/>';
+  var n=lines.length, lh=(h-2)/Math.max(n,1);
+  var y0=cy-(n-1)*lh/2+1.5;
+  lines.forEach(function(l,i){
+    var fs=w<16?3:(n>2?3.2:3.8);
+    s+='<text x="'+r(cx)+'" y="'+r(y0+i*lh)+'" text-anchor="middle" font-size="'+fs+'" font-weight="bold" fill="'+fg+'">'+l+'</text>';
+  });
+  return s;
+}
+
+// Arrowboard / Truck-Mounted Attenuator — amber chevrons pointing left
+function aTMAarrow(cx, cy) {
+  var W=30,H=15;
+  var s='<rect x="'+r(cx-W/2)+'" y="'+r(cy-H/2)+'" width="'+r(W)+'" height="'+r(H)+'" fill="#1c1917" rx="2" stroke="#374151" stroke-width="0.8"/>';
+  [[cx-9,cy],[cx-1,cy],[cx+7,cy]].forEach(function(p){
+    s+='<polyline points="'+r(p[0]+4.5)+','+r(p[1]-4)+' '+r(p[0])+','+r(p[1])+' '+r(p[0]+4.5)+','+r(p[1]+4)+'" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  });
+  s+='<text x="'+r(cx+W/2-4)+'" y="'+r(cy+2)+'" text-anchor="end" font-size="3.8" font-weight="bold" fill="#f59e0b">AB</text>';
+  return s;
+}
+
+function svgAgttmLaneClosure(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var nL=Math.max(1,p.nLanes||1), vPosted=p.vPosted, vWork=p.vWork;
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=34, SH=36;   // SH=36 to accommodate 3-level sign stacking per AGTTM
+  var isUndivided = !p.roadConfig || p.roadConfig === 'undivided';
+  var isDivided   = p.roadConfig === 'divided';
+  var oppLanes    = isUndivided ? 1 : 0;
+  var medianH     = isDivided   ? 14 : 0;
+
+  var ROAD_TOP=90, ROAD_H=nL*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var EXTRA_H = oppLanes*LANE_H + medianH + (isUndivided||isDivided ? SH : 0);
+  var DIM_Y1=ROAD_BOT+EXTRA_H+14, DIM_Y2=ROAD_BOT+EXTRA_H+34, DIM_Y3=ROAD_BOT+EXTRA_H+54;
+  var SVG_H=DIM_Y3+40, SVG_W=AVAIL+LM+RM;
+
+  var total=4*sp+mt+buf+workLen+buf+ct+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xS2=X(sp), xS3=X(2*sp), xS4=X(3*sp), xTS=X(4*sp);
+  var xTE=X(4*sp+mt), xWS=X(4*sp+mt+buf), xWE=X(4*sp+mt+buf+workLen);
+  var xCS=X(4*sp+mt+buf+workLen+buf), xCE=X(4*sp+mt+buf+workLen+buf+ct);
+  var xSE=X(4*sp+mt+buf+workLen+buf+ct+sp);
+
+  var closedTop=ROAD_TOP, closedBot=ROAD_TOP+LANE_H, openTop=closedBot;
+  var s='';
+
+  // Background and shoulders
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  // Bottom shoulder — only if divided or no extra lanes
+  if (!isUndivided) s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full road (near direction)
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Buffer zones (amber) in closed lane
+  s+=svgRect(xTE,closedTop,xCS-xTE,LANE_H,'#fef3c7');
+  // Work area (red hatch) in closed lane
+  s+=svgRect(xWS,closedTop,xWE-xWS,LANE_H,'url(#hWork)');
+  s+=svgRect(xWS,closedTop,xWE-xWS,LANE_H,'#ef4444','opacity="0.28"');
+  // Merge taper
+  s+=svgPoly([[xTS,closedTop],[xTE,closedTop],[xTE,closedBot],[xTS,closedTop]],'#fed7aa');
+  s+=svgLine(xTS,closedTop,xTE,closedBot,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTS,closedTop,xTE,closedBot,Math.max(4,Math.round((xTE-xTS)/26)));
+  // Closing taper
+  s+=svgPoly([[xCS,closedBot],[xCE,closedTop],[xCE,closedBot]],'#fed7aa');
+  s+=svgLine(xCS,closedBot,xCE,closedTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xCS,closedBot,xCE,closedTop,Math.max(3,Math.round((xCE-xCS)/26)));
+  // Lane markings
+  for(var i=1;i<nL;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10" opacity="0.7"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Centreline between closed and open lanes (dashed white)
+  s+=svgLine(0,closedBot,SVG_W,closedBot,'white',1.2,'stroke-dasharray="18,10" opacity="0.55"');
+  // Flow arrow in open lanes
+  var flowY=nL>1?openTop+(nL-1)*LANE_H/2:ROAD_TOP+LANE_H/2;
+  s+=aFlow((xWS+xWE)/2,flowY,true);
+  // Road labels
+  s+=svgText((xWS+xWE)/2,closedTop+LANE_H/2+4,'WORK AREA','middle',7.5,'white',true);
+  if(xWE-xWS>50) s+=svgText((xWS+xWE)/2,closedTop+LANE_H/2+14,workLen+'m','middle',7,'#fca5a5',false);
+  if(xWS-xTE>22) s+=svgText((xTE+xWS)/2,closedTop+LANE_H/2+4,buf+'m buffer','middle',6.5,'#92400e',true);
+  if(xCS-xWE>22) s+=svgText((xWE+xCS)/2,closedTop+LANE_H/2+4,buf+'m buffer','middle',6.5,'#92400e',true);
+  if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,closedTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xCE-xCS>18) s+=svgText((xCS+xCE)/2,closedTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // CLOSED label on approach closed lane
+  s+=svgText((xS1+xTS)/2,closedTop+LANE_H/2+4,'← CLOSED LANE','middle',7,'#f97316',true);
+
+  // ── AGTTM Sign Sequence — Lane Closure ──────────────────────────────────────
+  // Speed signs positioned closest to traffic (SNEAR = bottom of shoulder).
+  // Layout per AGTTM04: RWA/WM → WM/Speed/RW → PTS/TC → LSM/Merge →
+  //   3×LSM in taper → Arrowboard → Work Area → ERW + Release Speed
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
+  var hasSpd = vWork && vWork < vPosted;
+
+  // S1 (furthest): Road Work Ahead diamond + Works Marker
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+
+  // S2: Speed sign nearest traffic + Road Work diamond above
+  if (hasSpd) {
+    s+=aSpdSign(xS2, SNEAR, vWork);
+    s+=aWarnSign(xS2, SFAR, ['ROAD','WORK']);
+  } else {
+    s+=aWarnSign(xS2, SMID, ['LANE','CLOSED','AHEAD']);
+  }
+
+  // S3 (90m before taper): Prepare to Stop + Traffic Controller Ahead
+  s+=aRectSign(xS3, SNEAR, ['PREPARE','TO STOP'], '#dc2626','white');
+  s+=aWarnSign(xS3, SFAR, ['TRAFFIC','CONTROLLER']);
+
+  // S4 (45m before taper): Lane Status / Merge — own sign station per AGTTM
+  s+=aRectSign(xS4, SMID, ['LANE STATUS','/ MERGE'], '#1a365d','white',30,13);
+
+  // 3× LSM signs at 24m intervals within taper (AGTTM — LSM spacing = 24m)
+  var lsmSpacing = 24 * sc;
+  if (xTE-xTS > 10) {
+    for (var li=1;li<=3;li++) {
+      var lx = xTS + li * lsmSpacing;
+      if (lx < xTE) s+=aRectSign(lx, SNEAR, ['← LSM'], '#1a365d','white',20,11);
+    }
+  }
+
+  // Arrowboard / TMA at end of merge taper (start of work area)
+  s+=aTMAarrow(xTE, SMID);
+
+  // ERW + Release Speed at termination (speed closest to traffic)
+  s+=aRectSign(xSE, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xSE, SNEAR, vPosted);  // release speed — nearest to traffic
+
+  // Dimension lines — 4 advance warning stations each at sp intervals
+  s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
+  s+=aDim(xS2,xS3,DIM_Y1,sp+'m');
+  s+=aDim(xS3,xS4,DIM_Y1,sp+'m');
+  s+=aDim(xS4,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xTS,xTE,DIM_Y2,mt+'m merge taper');
+  s+=aDim(xTE,xWS,DIM_Y2,buf+'m buffer');
+  s+=aDim(xWS,xWE,DIM_Y3,workLen+'m work area');
+  s+=aDim(xWE,xCS,DIM_Y2,buf+'m buffer');
+  s+=aDim(xCS,xCE,DIM_Y2,ct+'m closing taper');
+  s+=aDim(xCE,xSE,DIM_Y1,sp+'m');
+
+  // Opposing lane / median below near carriageway
+  if (isDivided) {
+    s+=svgRect(0,ROAD_BOT,SVG_W,medianH,'#78909c');
+    s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'#fbbf24',2);
+    s+=svgLine(0,ROAD_BOT+medianH,SVG_W,ROAD_BOT+medianH,'#fbbf24',2);
+    s+=svgText(SVG_W/2,ROAD_BOT+medianH/2+3,'MEDIAN STRIP','middle',6,'white',false);
+    s+=svgRect(0,ROAD_BOT+medianH,SVG_W,SH,'#c8e6c9');
+  }
+  if (isUndivided) {
+    // Yellow centreline separates near from far traffic
+    s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'#fbbf24',2.5);
+    // Opposing direction lane (unaffected)
+    s+=svgRect(0,ROAD_BOT,SVG_W,LANE_H,'#546e7a');
+    s+=svgLine(0,ROAD_BOT+LANE_H,SVG_W,ROAD_BOT+LANE_H,'white',2.5);
+    s+=svgRect(0,ROAD_BOT+LANE_H,SVG_W,SH,'#c8e6c9');
+    s+=aFlow(SVG_W*0.4,ROAD_BOT+LANE_H/2,false);
+    s+=svgText(SVG_W-RM,ROAD_BOT+LANE_H/2+4,'← Opposing Direction (unaffected)','end',8,'white',false);
+  }
+
+  // Zone labels
+  var zY=DIM_Y3+18;
+  s+=zoneLabel(xS1,xTS,zY,'ADVANCE WARNING ZONE','#1d4ed8');
+  s+=zoneLabel(xTS,xTE,zY,'TRANSITION','#f97316');
+  s+=zoneLabel(xTE,xWS,zY,'BUFFER','#d97706');
+  s+=zoneLabel(xWS,xWE,zY,'WORK SPACE','#dc2626');
+  s+=zoneLabel(xWE,xCS,zY,'BUFFER','#d97706');
+  s+=zoneLabel(xCS,xCE,zY,'TERM.','#f97316');
+  s+=zoneLabel(xCE,xSE,zY,'TERMINATION ZONE','#16a34a');
+
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'LANE CLOSURE — '+p.state+' (AGTTM04 / AS1742.3) — '+vPosted+(hasSpd?' → '+vWork:'')+'km/h','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmShuttleflow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc';
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=36;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var rH=2*LANE_H;
+  var ROAD_BOT=ROAD_TOP+rH;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xRWA1=X2(0), xSpd1=X2(sp), xTCa=X2(sp);
+  var xTSa=X2(sp), xTEa=X2(sp+mt), xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xTCd=X2(sp+mt+workLen+ct), xSpd2=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var lane1Y=ROAD_TOP, lane2Y=ROAD_TOP+LANE_H;
+  var s='';
+
+  // Background + shoulders
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full 2-lane road
+  s+=svgRect(0,ROAD_TOP,SVG_W,rH,'#546e7a');
+  // Work zone (both lanes hatched)
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,rH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP,xWE-xWS,rH,'#ef4444','opacity="0.28"');
+  // One-lane-two-way section: between tapers
+  s+=svgRect(xTEa,lane2Y,xTSd-xTEa,LANE_H,'#1d4ed8','opacity="0.2"');
+  // Approach taper (narrows from 2 to 1 lane on top lane)
+  s+=svgPoly([[xTSa,lane1Y],[xTEa,lane1Y],[xTEa,lane2Y],[xTSa,lane1Y]],'#fed7aa');
+  s+=svgLine(xTSa,lane1Y,xTEa,lane2Y,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,lane1Y,xTEa,lane2Y,Math.max(4,Math.round((xTEa-xTSa)/26)));
+  // Departure taper
+  s+=svgPoly([[xTSd,lane2Y],[xTEd,lane1Y],[xTEd,lane2Y]],'#fed7aa');
+  s+=svgLine(xTSd,lane2Y,xTEd,lane1Y,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,lane2Y,xTEd,lane1Y,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  // Lane markings
+  s+=svgLine(0,lane2Y,SVG_W,lane2Y,'#fbbf24',2);
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow arrows
+  s+=aFlow((xRWA1+xTSa)/2,lane1Y+LANE_H/2,true);
+  s+=aFlow((xTEd+xEND)/2,lane2Y+LANE_H/2,false);
+  // Labels
+  s+=svgText((xWS+xWE)/2,ROAD_TOP+LANE_H+4,'WORK AREA','middle',8,'white',true);
+  s+=svgText((xWS+xWE)/2,ROAD_TOP+LANE_H+15,workLen+'m','middle',7,'#fca5a5',false);
+  if(xTEa-xTSa>28) s+=svgText((xTSa+xTEa)/2,lane1Y+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,lane1Y+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // Single lane section label
+  s+=svgText((xTEa+xTSd)/2,lane2Y+LANE_H/2+4,'ONE LANE TWO WAY','middle',7.5,'#93c5fd',true);
+
+  // Traffic controllers at each end (below road)
+  var ctrlY=ROAD_BOT+SH+8;
+  s+=aCtrl(xTCa,ctrlY,tcMethod);
+  s+=aCtrl(xTCd,ctrlY,tcMethod);
+
+  // AGTTM Sign Sequence — Shuttleflow
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
+  var hasSpd2 = vWork && vWork < vPosted;
+  // Approach: RWA + WM → Speed → PTS/TC or Stop on Red
+  s+=aWarnSign(xRWA1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xRWA1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpd2) {
+    s+=aSpdSign(xTSa-sp/2, SNEAR, vWork);
+    s+=aWarnSign(xTSa-sp/2, SFAR, ['ROAD','WORK']);
+  }
+  // PTS or Stop on Red closest to taper
+  var ctrlTxt = tcMethod==='ptl' ? ['STOP ON','RED SIGNAL'] : ['PREPARE','TO STOP'];
+  s+=aRectSign(xTSa, SNEAR, ctrlTxt, '#dc2626','white');
+  s+=aWarnSign(xTSa, SFAR, tcMethod==='ptl' ? ['TRAFFIC','SIGNALS'] : ['TRAFFIC','CONTROLLER']);
+  // Far end: ERW + release speed
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
+
+  // Dimension labels
+  s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
+  s+=aDim(xTSa,xTEa,DIM_Y1,mt+'m taper');
+  s+=aDim(xTEa,xTSd,DIM_Y2,workLen+'m work zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ / ← Direction of Travel (Both Directions)','start',9,'#1a365d',true);
+  var ctrlLabel=tcMethod==='tc'?'Traffic Controllers':'Portable Traffic Lights';
+  s+=svgText(SVG_W/2,SVG_H-8,ctrlLabel+' at each end of shuttleflow section — SHUTTLEFLOW — '+p.state+' (AGTTM04 / AS1742.3)','middle',8,'#475569',false);
+
+  return wrapSVG(s,SVG_W,SVG_H+20);
+}
+
+function svgAgttmContraflow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, tcMethod=p.tcMethod||'tc', nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=34, SH=36, medH=14;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var normalH=nLanes*LANE_H, cfH=LANE_H;
+  var ROAD_BOT=ROAD_TOP+normalH+medH+cfH;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+80, SVG_W=AVAIL+LM+RM;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xRWA1=X2(0), xSpd1=X2(sp), xTSa=X2(sp), xTEa=X2(sp+mt);
+  var xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var normalTop=ROAD_TOP, normalBot=ROAD_TOP+normalH;
+  var medTop=normalBot, medBot=medTop+medH;
+  var cfTop=medBot, cfBot=cfTop+cfH;
+  var s='';
+
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,cfBot,SVG_W,SH,'#c8e6c9');
+  // Normal carriageway
+  s+=svgRect(0,normalTop,SVG_W,normalH,'#546e7a');
+  // Median
+  s+=svgRect(0,medTop,SVG_W,medH,'#78909c');
+  s+=svgText(SVG_W/2,medTop+medH/2+3,'MEDIAN','middle',6,'white',false);
+  // Contraflow lane
+  s+=svgRect(0,cfTop,SVG_W,cfH,'#546e7a');
+  // Work area in normal carriageway (top lane)
+  s+=svgRect(xWS,normalTop,xWE-xWS,LANE_H,'url(#hWork)');
+  s+=svgRect(xWS,normalTop,xWE-xWS,LANE_H,'#ef4444','opacity="0.28"');
+  // Contraflow lane work section (occupied by contraflow traffic)
+  s+=svgRect(xTEa,cfTop,xTSd-xTEa,cfH,'#1d4ed8','opacity="0.25"');
+  // Merge tapers
+  s+=svgPoly([[xTSa,normalTop],[xTEa,normalTop],[xTEa,normalTop+LANE_H],[xTSa,normalTop]],'#fed7aa');
+  s+=svgLine(xTSa,normalTop,xTEa,normalTop+LANE_H,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,normalTop,xTEa,normalTop+LANE_H,Math.max(4,Math.round((xTEa-xTSa)/26)));
+  // CF lane taper (approach side of contraflow)
+  s+=svgPoly([[xTSa,cfBot],[xTEa,cfTop],[xTEa,cfBot]],'#fed7aa');
+  s+=svgLine(xTSa,cfBot,xTEa,cfTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSa,cfBot,xTEa,cfTop,Math.max(3,Math.round((xTEa-xTSa)/26)));
+  // Departure tapers
+  s+=svgPoly([[xTSd,normalTop+LANE_H],[xTEd,normalTop],[xTEd,normalTop+LANE_H]],'#fed7aa');
+  s+=svgLine(xTSd,normalTop+LANE_H,xTEd,normalTop,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,normalTop+LANE_H,xTEd,normalTop,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  s+=svgPoly([[xTSd,cfTop],[xTEd,cfBot],[xTEd,cfTop]],'#fed7aa');
+  s+=svgLine(xTSd,cfTop,xTEd,cfBot,'#f97316',2,'stroke-dasharray="8,5"');
+  s+=aCones(xTSd,cfTop,xTEd,cfBot,Math.max(3,Math.round((xTEd-xTSd)/26)));
+  // Solid separation line between carriageways
+  s+=svgLine(0,medTop,SVG_W,medTop,'#fbbf24',2);
+  s+=svgLine(0,medBot,SVG_W,medBot,'#fbbf24',2);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,normalTop+i*LANE_H,SVG_W,normalTop+i*LANE_H,'white',1.2,'stroke-dasharray="18,10" opacity="0.6"');
+  s+=svgLine(0,normalTop,SVG_W,normalTop,'white',2.5);
+  s+=svgLine(0,cfBot,SVG_W,cfBot,'white',2.5);
+  // Flow arrows
+  s+=aFlow((xWS+xWE)/2,normalTop+(nLanes>1?(nLanes-0.5)*LANE_H:LANE_H/2),true);
+  s+=aFlow((xTEa+xTSd)/2,cfTop+cfH/2,false);
+  // Labels
+  s+=svgText((xWS+xWE)/2,normalTop+LANE_H/2+4,'WORK AREA','middle',7.5,'white',true);
+  s+=svgText((xTEa+xTSd)/2,cfTop+cfH/2+4,'CONTRAFLOW LANE','middle',7.5,'#93c5fd',true);
+  if(xTEa-xTSa>28) s+=svgText((xTSa+xTEa)/2,normalTop+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,normalTop+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+  // Min lane width note
+  s+=svgText(SVG_W-RM,cfBot+SH+14,'Min lane width 3.3m to remain open','end',7.5,'#dc2626',false);
+
+  // TC/PTL positions
+  s+=aCtrl(xTSa-10,cfBot+SH+6,tcMethod);
+  s+=aCtrl(xTEd+10,cfBot+SH+6,tcMethod);
+
+  // AGTTM Sign Sequence — Contraflow
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
+  var hasSpdCF = vWork && vWork < vPosted;
+  s+=aWarnSign(xRWA1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xRWA1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdCF) {
+    s+=aSpdSign(xTSa-sp/2, SNEAR, vWork);
+    s+=aWarnSign(xTSa-sp/2, SFAR, ['ROAD','WORK']);
+  }
+  s+=aRectSign(xTSa, SMID, ['MERGE →','CONTRAFLOW'], '#1a365d','white',34,13);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
+
+  // Dimensions
+  s+=aDim(xRWA1,xTSa,DIM_Y1,sp+'m');
+  s+=aDim(xTSa,xTEa,DIM_Y1,mt+'m merge taper');
+  s+=aDim(xTEa,xTSd,DIM_Y2,workLen+'m contraflow zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m departure taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Normal Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(LM,cfBot+6,'← Contraflow Direction','start',8,'#1d4ed8',false);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'CONTRAFLOW — '+p.state+' (AGTTM / AS1742.3)','end',8,'#546e7a',false);
+  s+=svgText(SVG_W/2,SVG_H-8,'NOTE: Rigid separation required between opposing flows — seek engineer approval','middle',7.5,'#dc2626',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmLaneNarrow(p) {
+  var sp=p.sp, mt=p.mt, ct=p.ct, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=36, narrowPx=LANE_H*0.38;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var DIM_Y1=ROAD_BOT+24, DIM_Y2=ROAD_BOT+44;
+  var SVG_H=ROAD_BOT+72, SVG_W=AVAIL+LM+RM;
+
+  var total=sp+mt+workLen+ct+sp;
+  var sc=AVAIL/total;
+  function X2(d){return LM+d*sc;}
+  var xS1=X2(0), xSpd=X2(sp), xTS=X2(sp), xTE=X2(sp+mt);
+  var xWS=X2(sp+mt), xWE=X2(sp+mt+workLen);
+  var xTSd=X2(sp+mt+workLen), xTEd=X2(sp+mt+workLen+ct);
+  var xEND=X2(sp+mt+workLen+ct+sp);
+
+  var s='';
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Narrowed zone (top of lane 1)
+  s+=svgRect(xTE,ROAD_TOP,xTSd-xTE,narrowPx,'url(#hCone)');
+  s+=svgRect(xTE,ROAD_TOP,xTSd-xTE,narrowPx,'#f97316','opacity="0.4"');
+  // Taper polygons
+  s+=svgPoly([[xTS,ROAD_TOP],[xTE,ROAD_TOP+narrowPx],[xTSd,ROAD_TOP+narrowPx],[xTEd,ROAD_TOP]],'#fed7aa','#f97316',1);
+  s+=aCones(xTS,ROAD_TOP,xTE,ROAD_TOP+narrowPx,Math.max(4,Math.round((xTE-xTS)/28)));
+  s+=aCones(xTSd,ROAD_TOP+narrowPx,xTEd,ROAD_TOP,Math.max(3,Math.round((xTEd-xTSd)/28)));
+  // Cones along narrowed section
+  var nCones=Math.max(3,Math.round((xTSd-xTE)/40));
+  for(var ci=0;ci<=nCones;ci++) s+=aCone(xTE+(ci/nCones)*(xTSd-xTE),ROAD_TOP+narrowPx*0.5,5);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'white',2.5);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow
+  for(var li=0;li<nLanes;li++) s+=aFlow((xWS+xWE)/2,ROAD_TOP+(li+0.5)*LANE_H,true);
+  // Labels
+  s+=svgText((xTE+xTSd)/2,ROAD_TOP+narrowPx/2+4,'Delineation devices','middle',7.5,'white',true);
+  s+=svgText((xTE+xTSd)/2,ROAD_TOP+narrowPx/2+14,'Min 3.3m lane width','middle',7,'#fca5a5',false);
+  if(xTE-xTS>28) s+=svgText((xTS+xTE)/2,ROAD_TOP+4,mt+'m Taper','middle',6.5,'#7c2d12',true);
+  if(xTEd-xTSd>18) s+=svgText((xTSd+xTEd)/2,ROAD_TOP+4,ct+'m Taper','middle',6.5,'#7c2d12',true);
+
+  // AGTTM Sign Sequence — Lane Narrowing
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
+  var hasSpdLN = vWork && vWork < vPosted;
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdLN) s+=aSpdSign((xS1+xTS)/2, SNEAR, vWork);
+  s+=aWarnSign((xS1+xTS)/2, SFAR, ['LANE','NARROWS']);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
+
+  s+=aDim(xS1,xTS,DIM_Y1,sp+'m');
+  s+=aDim(xTS,xTE,DIM_Y1,mt+'m taper');
+  s+=aDim(xTE,xTSd,DIM_Y2,workLen+'m narrowed zone');
+  s+=aDim(xTSd,xTEd,DIM_Y1,ct+'m taper');
+  s+=aDim(xTEd,xEND,DIM_Y1,sp+'m');
+
+  s+=svgText(LM,ROAD_TOP-SH-10,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-10,'LANE NARROWING — '+p.state+' (AGTTM04 / AS1742.3)','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+function svgAgttmShoulder(p) {
+  var sp=p.sp, buf=p.buf, workLen=p.workLen;
+  var vPosted=p.vPosted, vWork=p.vWork, nLanes=Math.max(1,p.nLanes||1);
+
+  var LM=50, RM=50, AVAIL=820;
+  var LANE_H=36, SH=36;
+  var ROAD_TOP=90;
+  var SIGN_CY=Math.round(ROAD_TOP-SH/2);
+  var ROAD_H=nLanes*LANE_H, ROAD_BOT=ROAD_TOP+ROAD_H;
+  var DIM_Y1=ROAD_BOT+SH+24;
+  var SVG_H=ROAD_BOT+SH+60, SVG_W=AVAIL+LM+RM;
+
+  var total=2*sp+workLen+sp;
+  var sc=AVAIL/total;
+  function X(d){return LM+d*sc;}
+  var xS1=X(0), xS2=X(sp);
+  var xWS=X(2*sp), xWE=X(2*sp+workLen);
+  var xEND=X(2*sp+workLen+sp);
+
+  var s='';
+  s+=svgRect(0,0,SVG_W,SVG_H,'#e8f5e9');
+  // Shoulder (work area side — top shoulder)
+  s+=svgRect(0,ROAD_TOP-SH,SVG_W,SH,'#c8e6c9');
+  // Bottom shoulder
+  s+=svgRect(0,ROAD_BOT,SVG_W,SH,'#c8e6c9');
+  // Full road (all lanes open)
+  s+=svgRect(0,ROAD_TOP,SVG_W,ROAD_H,'#546e7a');
+  // Work area in shoulder
+  s+=svgRect(xWS,ROAD_TOP-SH,xWE-xWS,SH,'url(#hWork)');
+  s+=svgRect(xWS,ROAD_TOP-SH,xWE-xWS,SH,'#ef4444','opacity="0.3"');
+  // Boundary at shoulder edge
+  s+=svgLine(xWS,ROAD_TOP-SH,xWS,ROAD_TOP,'#f97316',2);
+  s+=svgLine(xWE,ROAD_TOP-SH,xWE,ROAD_TOP,'#f97316',2);
+  s+=svgLine(xWS,ROAD_TOP,xWE,ROAD_TOP,'#f97316',2);
+  // Simple cone row at shoulder boundary
+  var nc=Math.max(3,Math.round((xWE-xWS)/30));
+  for(var ci=0;ci<=nc;ci++) s+=aCone(xWS+(ci/nc)*(xWE-xWS),ROAD_TOP,6);
+  // Lane markings
+  for(var i=1;i<nLanes;i++) s+=svgLine(0,ROAD_TOP+i*LANE_H,SVG_W,ROAD_TOP+i*LANE_H,'white',1.5,'stroke-dasharray="18,10"');
+  s+=svgLine(0,ROAD_TOP,SVG_W,ROAD_TOP,'#fbbf24',2);
+  s+=svgLine(0,ROAD_BOT,SVG_W,ROAD_BOT,'white',2.5);
+  // Flow arrows (all lanes open)
+  for(var li=0;li<nLanes;li++) s+=aFlow((xWS+xWE)/2,ROAD_TOP+(li+0.5)*LANE_H,true);
+  // Labels
+  s+=svgText((xWS+xWE)/2,ROAD_TOP-SH/2+4,'WORK AREA','middle',8,'white',true);
+  s+=svgText((xWS+xWE)/2,ROAD_TOP-SH/2+14,workLen+'m','middle',7,'#fca5a5',false);
+  s+=svgText(SVG_W/2,ROAD_TOP+ROAD_H/2+4,'Travel lanes remain open','middle',9,'white',false);
+  s+=svgText(10,ROAD_TOP-SH/2+4,'Shoulder','start',7.5,'#166534',false);
+
+  // AGTTM Sign Sequence — Shoulder Works
+  var SNEAR=ROAD_TOP-9, SMID=ROAD_TOP-20, SFAR=ROAD_TOP-31;
+  var hasSpdSH = vWork && vWork < vPosted;
+  s+=aWarnSign(xS1, SFAR, ['ROAD','WORK','AHEAD']);
+  s+=aRectSign(xS1, SNEAR, ['WM'], '#f97316','white',18,11);
+  if (hasSpdSH) s+=aSpdSign(xS2, SNEAR, vWork);
+  s+=aWarnSign(xS2, SFAR, ['SHOULDER','WORKS']);
+  s+=aRectSign(xEND, SFAR, ['END','ROAD','WORK'], '#16a34a','white');
+  s+=aSpdSign(xEND, SNEAR, vPosted);
+
+  s+=aDim(xS1,xS2,DIM_Y1,sp+'m');
+  s+=aDim(xS2,xWS,DIM_Y1,sp+'m');
+  s+=aDim(xWS,xWE,DIM_Y1+18,workLen+'m shoulder works');
+  s+=aDim(xWE,xEND,DIM_Y1,sp+'m');
+
+  s+=svgText(LM,ROAD_TOP-SH-14,'→ Direction of Travel','start',9,'#1a365d',true);
+  s+=svgText(SVG_W-RM,ROAD_TOP-SH-14,'WORKS OFF ROADWAY — '+p.state+' (AS1742.3)','end',8,'#546e7a',false);
+
+  return wrapSVG(s,SVG_W,SVG_H);
+}
+
+// ═══════════════ INIT ═══════════════════════════════════════════════════════════
+
+// Default QLD mode display
+setQldTab(document.querySelector('#form-qld .tab'), 'count');
+</script>
+</body>
+</html>
